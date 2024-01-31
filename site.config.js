@@ -2,7 +2,7 @@ const CONFIG = {
   // profile setting (required)
   profile: {
     name: "Jaeho Yi",
-    image: "/avatar.svg",
+    image: "/android-chrome-192x192.png",
     role: "",
     bio: "",
     email: "akghxhs55@gmail.com",
