@@ -48,16 +48,14 @@ const PostHeader: React.FC<Props> = ({ data }) => {
               </div>
             )}
           </div>
-          {/*{data.thumbnail && (*/}
-          {/*  <div className="thumbnail">*/}
-          {/*    <Image*/}
-          {/*      src={data.thumbnail}*/}
-          {/*      css={{ objectFit: "cover" }}*/}
-          {/*      fill*/}
-          {/*      alt={data.title}*/}
-          {/*    />*/}
-          {/*  </div>*/}
-          {/*)}*/}
+          {data.thumbnail && (
+            <div className="thumbnail">
+              <Image
+                src={data.thumbnail}
+                alt={data.title}
+              />
+            </div>
+          )}
         </nav>
       )}
     </StyledWrapper>
