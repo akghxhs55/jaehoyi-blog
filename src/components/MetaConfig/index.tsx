@@ -20,7 +20,7 @@ const MetaConfig: React.FC<MetaConfigProps> = (props) => {
       {/* og */}
       <meta property="og:type" content={props.type} />
       <meta property="og:title" content={props.title} />
-      <meta property="og:site_name" content={CONFIG.profile.name}>
+      <meta property="og:site_name" content={CONFIG.profile.name} />
       <meta property="og:description" content={props.description} />
       <meta property="og:url" content={props.url} />
       {CONFIG.lang && <meta property="og:locale" content={CONFIG.lang} />}
