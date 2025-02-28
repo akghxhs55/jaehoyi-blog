@@ -37,6 +37,16 @@ const MetaConfig: React.FC<MetaConfigProps> = (props) => {
           <meta property="article:author" content={CONFIG.profile.name} />
         </>
       )}
+      {/* JSON-LD */}
+      <script type="application/ld+json">
+        {
+          "@context" : "https://schema.org",
+          "@type" : "WebSite",
+          "name" : "Jaeho Yi",
+          "alternateName" : "Jaeho Yi Blog",
+          "url" : "https://jaehoyi-blog.vercel.app/"
+        }
+      </script>
     </Head>
   )
 }
