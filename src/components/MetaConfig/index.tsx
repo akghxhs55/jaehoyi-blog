@@ -10,6 +10,14 @@ export type MetaConfigProps = {
   url: string
 }
 
+const schemeData = {
+  "@context" : "https://schema.org",
+  "@type" : "WebSite",
+  "name" : "Jaeho Yi",
+  "alternateName" : "Jaeho Yi Blog",
+  "url" : "https://jaehoyi-blog.vercel.app/"
+}
+
 const MetaConfig: React.FC<MetaConfigProps> = (props) => {
   return (
     <Head>
@@ -38,15 +46,7 @@ const MetaConfig: React.FC<MetaConfigProps> = (props) => {
         </>
       )}
       {/* JSON-LD */}
-      <script type="application/ld+json">
-        {
-          "@context" : "https://schema.org",
-          "@type" : "WebSite",
-          "name" : "Jaeho Yi",
-          "alternateName" : "Jaeho Yi Blog",
-          "url" : "https://jaehoyi-blog.vercel.app/"
-        }
-      </script>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemeData) }} />
     </Head>
   )
 }
