@@ -9,7 +9,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
 
   // Create an array of fields, each with a loc and lastmod
   const fields: ISitemapField[] = dynamicPaths.map((path) => ({
-    loc: path,
+    loc: encodeURI(path),
     lastmod: new Date().toISOString(),
     priority: 0.7,
     changefreq: "daily",
