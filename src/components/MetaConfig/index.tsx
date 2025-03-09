@@ -15,7 +15,7 @@ const schemeData = {
   "@type" : "WebSite",
   "name" : "Jaeho Yi",
   "alternateName" : "Jaeho Yi Blog",
-  "url" : "https://jaehoyi.kr/"
+  "url" : "https://www.jaehoyi.kr/"
 }
 
 const MetaConfig: React.FC<MetaConfigProps> = (props) => {
