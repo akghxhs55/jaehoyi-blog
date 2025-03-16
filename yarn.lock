@@ -3173,7 +3173,7 @@ notion-client@^6.16.0:
     notion-utils "^6.16.0"
     p-map "^5.3.0"
 
-notion-types@7.1.6:
+notion-types@7.1.6, notion-types@^7.1.6:
   version "7.1.6"
   resolved "https://registry.yarnpkg.com/notion-types/-/notion-types-7.1.6.tgz#9aca274e2bdf3d4d0c31cd0a4d038685a3f835ba"
   integrity sha512-bWv5wGrlaEKPd0qGWJq0G5cq8uwgfMKhCM+5GEgdXfzuDD9eoKX2pkfdXnE5bU2uFJJK+LGc2XWggBJ+P8AWCg==
