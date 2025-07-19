@@ -44,6 +44,9 @@ type Props = {
   children: ReactNode
 }
 
+import dynamic from "next/dynamic";
+const Analytics = dynamic(() => import("@vercel/analytics/next").then(mod => mod.Analytics), { ssr: false });
+
 const RootLayout = ({ children }: Props) => {
   const [scheme] = useScheme()
   useGtagEffect()
@@ -57,7 +60,10 @@ const RootLayout = ({ children }: Props) => {
       {/* // TODO: replace react query */}
       {/* {metaConfig.type !== "Paper" && <Header />} */}
       <Header fullWidth={false} />
-      <StyledMain>{children}</StyledMain>
+      <StyledMain>
+        {children}
+        <Analytics />
+      </StyledMain>
     </ThemeProvider>
   )
 }
