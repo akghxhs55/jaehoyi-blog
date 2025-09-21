@@ -13,7 +13,7 @@ import "prismjs/themes/prism-tomorrow.css"
 // used for rendering equations (optional)
 
 import "katex/dist/katex.min.css"
-import { FC } from "react"
+import { FC, useEffect, useRef } from "react"
 import styled from "@emotion/styled"
 
 const _NotionRenderer = dynamic(
@@ -56,8 +56,28 @@ type Props = {
 
 const NotionRenderer: FC<Props> = ({ recordMap }) => {
   const [scheme] = useScheme()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (containerRef.current) {
+        const notionTextDivs =
+          containerRef.current.querySelectorAll("div.notion-text")
+
+        notionTextDivs.forEach((div) => {
+          const p = document.createElement("p")
+          p.className = div.className
+          p.innerHTML = div.innerHTML
+
+          div.parentNode?.replaceChild(p, div)
+        })
+      }
+    }, 100);
+    return () => clearTimeout(timer)
+  }, [recordMap])
+
   return (
-    <StyledWrapper>
+    <StyledWrapper ref={containerRef}>
       <_NotionRenderer
         darkMode={scheme === "dark"}
         recordMap={recordMap}
