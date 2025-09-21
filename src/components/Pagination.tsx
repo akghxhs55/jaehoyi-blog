@@ -21,34 +21,26 @@ const Pagination: React.FC<Props> = ({ totalPages, currentPage }) => {
   }
 
   const getPaginationGroup = () => {
-    // 한 번에 보여줄 페이지 번호 수
     const pageLimit = 5
     const start = Math.floor((currentPage - 1) / pageLimit) * pageLimit
 
-    // 보여줄 페이지 번호들의 배열
-    const pages = Array.from({ length: pageLimit }, (_, i) => i + start + 1)
+    return Array.from({ length: pageLimit }, (_, i) => i + start + 1)
       .filter(page => page <= totalPages)
-
-    // '이전 그룹', '다음 그룹' 버튼 표시 여부
-    const showFirst = start > 0
-    const showLast = start + pageLimit < totalPages
-
-    return { pages, showFirst, showLast }
   }
 
-  const { pages, showFirst, showLast } = getPaginationGroup()
+  const pages = getPaginationGroup()
 
   const isFirstPage = currentPage === 1
   const isLastPage = currentPage === totalPages
 
   return (
     <StyledWrapper>
-      {/* 1. '<<' Move to First Page */}
-      {showFirst && (
-        <Link href={getPageLink(1)} passHref>
-          <button className="move">&lt;&lt;</button>
-        </Link>
-      )}
+      {/* '<<' Move to First Page */}
+      <Link href={isFirstPage ? "#" : getPageLink(1)} passHref>
+        <button className="move" disabled={isFirstPage}>
+          &lt;&lt;
+        </button>
+      </Link>
 
       {/* '<' Move to Previous Page */}
       <Link href={isFirstPage ? "#" : getPageLink(currentPage - 1)} passHref>
@@ -79,11 +71,11 @@ const Pagination: React.FC<Props> = ({ totalPages, currentPage }) => {
       </Link>
 
       {/* '>>' Move to Last Page */}
-      {showLast && (
-        <Link href={getPageLink(totalPages)} passHref>
-          <button className="move">&gt;&gt;</button>
-        </Link>
-      )}
+      <Link href={isLastPage ? "#" : getPageLink(totalPages)} passHref>
+        <button className="move" disabled={isLastPage}>
+          &gt;&gt;
+        </button>
+      </Link>
     </StyledWrapper>
   )
 }
