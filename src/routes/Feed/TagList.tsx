@@ -4,32 +4,32 @@ import React from "react"
 import { Emoji } from "src/components/Emoji"
 import { useTagsQuery } from "src/hooks/useTagsQuery"
 
-type Props = {}
+type Props = {
+  allTags: string[]
+}
 
-const TagList: React.FC<Props> = () => {
+const TagList: React.FC<Props> = ({ allTags }) => {
   const router = useRouter()
-  const currentTag = router.query.tag || undefined
-  const data = useTagsQuery()
+  const currentTag = router.query.tag as string || null
 
   const handleClickTag = (value: any) => {
+    const query = { ...router.query }
+
     // delete
     if (currentTag === value) {
-      router.push({
-        query: {
-          ...router.query,
-          tag: undefined,
-        },
-      })
+      delete query.tag
     }
     // add
     else {
-      router.push({
-        query: {
-          ...router.query,
-          tag: value,
-        },
-      })
+      query.tag = value
     }
+
+    delete query.page
+
+    router.push({
+      pathname: '/',
+      query: query,
+    })
   }
 
   return (
@@ -38,7 +38,7 @@ const TagList: React.FC<Props> = () => {
         <Emoji>🏷️</Emoji> Tags
       </div>
       <div className="list">
-        {Object.keys(data).map((key) => (
+        {allTags.map((key) => (
           <a
             key={key}
             data-active={key === currentTag}

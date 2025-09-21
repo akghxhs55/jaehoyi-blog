@@ -11,12 +11,16 @@ import ServiceCard from "./ServiceCard"
 import ContactCard from "./ContactCard"
 import PostList from "./PostList"
 import PinnedPosts from "./PostList/PinnedPosts"
+import { TPost } from "../../types"
 
 const HEADER_HEIGHT = 73
 
-type Props = {}
+type Props = {
+  posts: TPost[]
+  allTags: string[]
+}
 
-const Feed: React.FC<Props> = () => {
+const Feed: React.FC<Props> = ({ posts, allTags }) => {
   const [q, setQ] = useState("")
 
   return (
@@ -27,17 +31,17 @@ const Feed: React.FC<Props> = () => {
           height: `calc(100vh - ${HEADER_HEIGHT}px)`,
         }}
       >
-        <TagList />
+        <TagList allTags={allTags} />
       </div>
       <div className="mid">
         <MobileProfileCard />
         <PinnedPosts q={q} />
         <SearchInput value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="tags">
-          <TagList />
+          <TagList allTags={allTags} />
         </div>
         <FeedHeader />
-        <PostList q={q} />
+        <PostList posts={posts} q={q} />
         <div className="footer">
           <Footer />
         </div>
