@@ -59,21 +59,35 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (containerRef.current) {
-        const notionTextDivs =
-          containerRef.current.querySelectorAll("div.notion-text")
+    const container = containerRef.current
+    if (!container) return
 
-        notionTextDivs.forEach((div) => {
-          const p = document.createElement("p")
-          p.className = div.className
-          p.innerHTML = div.innerHTML
+    const convertDivsToParagraphs = () => {
+      const notionTextDivs = container.querySelectorAll("div.notion-text")
+      notionTextDivs.forEach((div) => {
+        if (div.tagName === "P") return
 
-          div.parentNode?.replaceChild(p, div)
-        })
+        const p = document.createElement("p")
+        p.className = div.className
+        p.innerHTML = div.innerHTML
+        div.parentNode?.replaceChild(p, div)
+      })
+    }
+
+    const callback: MutationCallback = (mutationsList) => {
+      for (const mutation of mutationsList) {
+        if (mutation.type === "childList") {
+          convertDivsToParagraphs()
+        }
       }
-    }, 100);
-    return () => clearTimeout(timer)
+    }
+
+    const observer = new MutationObserver(callback)
+    observer.observe(container, { childList: true, subtree: true })
+    convertDivsToParagraphs()
+    return () => {
+      observer.disconnect()
+    }
   }, [recordMap])
 
   return (
