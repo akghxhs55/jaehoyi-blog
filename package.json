@@ -23,7 +23,7 @@
     "cookies-next": "^2.1.2",
     "mermaid": "^10.9.1",
     "next": "^15.4.7",
-    "notion-client": "^7.1.6",
+    "notion-client": "^7.6.0",
     "notion-types": "^7.1.6",
     "notion-utils": "^6.16.0",
     "prismjs": "^1.29.0",
