@@ -5,6 +5,14 @@ import { queryClient } from "src/libs/react-query"
 import Head from "next/head" // 1. next/head에서 Head를 가져옵니다.
 import { CONFIG } from "site.config" // 2. 설정 파일 경로 (기존에 있다면 유지)
 
+import Router from "next/router"
+import NProgress from "nprogress"
+import "nprogress/nprogress.css"
+
+Router.events.on("routeChangeStart", () => NProgress.start())
+Router.events.on("routeChangeComplete", () => NProgress.done())
+Router.events.on("routeChangeError", () => NProgress.done())
+
 function App({ Component, pageProps }: AppPropsWithLayout) {
   const getLayout = Component.getLayout || ((page) => page)
 
