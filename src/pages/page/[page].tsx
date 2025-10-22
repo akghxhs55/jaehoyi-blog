@@ -4,6 +4,7 @@ import { getPosts } from "src/apis"
 import Feed from "src/routes/Feed" // 기존 메인 페이지의 Feed 컴포넌트
 import Pagination from "src/components/Pagination" // 새로 만들 컴포넌트
 import { TPost } from "src/types"
+import { DEFAULT_CATEGORY } from "src/constants"
 
 type Props = {
   posts: TPost[]
@@ -23,13 +24,50 @@ const PaginatedPage: NextPage<Props> = ({ posts, currentPage, totalPages, allTag
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const posts = await getPosts()
-  const page = parseInt((context.params?.page as string) || "1")
-  const currentTag = context.query.tag as string || null
-  const postsPerPage = CONFIG.postsPerPage
-  const filteredPosts = currentTag
-    ? posts.filter((post) => post.tags?.includes(currentTag))
-    : posts
 
+  const currentTag = context.query.tag as string || null
+  const currentSearch = context.query.q as string || null
+  const currentCategory = context.query.category as string || DEFAULT_CATEGORY
+  const currentOrder = context.query.order as string || "desc"
+
+  let filteredPosts = posts
+
+  filteredPosts.filter(
+    (post) => post.status?.[0] !== 'Private'
+  )
+
+  if (currentTag) {
+    filteredPosts = filteredPosts.filter(
+      (post) => post.tags?.includes(currentTag)
+    )
+  }
+
+  if (currentSearch) {
+    const normalizedSearch = currentSearch.toLowerCase().replace(/\s/g, "")
+
+    filteredPosts = filteredPosts.filter(
+      (post) => {
+        const tagContent = post.tags ? post.tags.join(" ") : ""
+        const searchContent = post.title + post.summary + tagContent
+        const normalizedContent = searchContent.toLowerCase().replace(/\s/g, "")
+        return normalizedContent.includes(normalizedSearch)
+      }
+    )
+  }
+
+  if (currentCategory !== DEFAULT_CATEGORY) {
+    filteredPosts.filter(
+      (post) => post.category?.includes(currentCategory)
+    )
+  }
+
+  if (currentOrder !== "desc") {
+    filteredPosts.reverse()
+  }
+
+  const page = parseInt((context.params?.page as string) || "1")
+
+  const postsPerPage = CONFIG.postsPerPage
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage)
   const startIndex = (page - 1) * postsPerPage
   const paginatedPosts = filteredPosts.slice(startIndex, startIndex + postsPerPage)

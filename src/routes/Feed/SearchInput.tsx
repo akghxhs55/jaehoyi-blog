@@ -1,21 +1,24 @@
 import styled from "@emotion/styled"
-import React, { InputHTMLAttributes, ReactNode } from "react"
+import React, { InputHTMLAttributes } from "react"
 import { Emoji } from "src/components/Emoji"
 
-interface Props extends InputHTMLAttributes<HTMLInputElement> {}
+interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onSubmit'> {
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
+}
 
-const SearchInput: React.FC<Props> = ({ ...props }) => {
+const SearchInput: React.FC<Props> = ({ onSubmit, ...props }) => {
   return (
     <StyledWrapper>
       <div className="top">
         <Emoji>🔎</Emoji> Search
       </div>
-      <input
-        className="mid"
-        type="text"
-        placeholder="Search Keyword..."
-        {...props}
-      />
+      <form onSubmit={onSubmit} className="mid">
+        <input
+          type="text"
+          placeholder="Search Keyword..."
+          {...props}
+        />
+      </form>
     </StyledWrapper>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import SearchInput from "./SearchInput"
 import { FeedHeader } from "./FeedHeader"
@@ -11,7 +11,8 @@ import ServiceCard from "./ServiceCard"
 import ContactCard from "./ContactCard"
 import PostList from "./PostList"
 import PinnedPosts from "./PostList/PinnedPosts"
-import { TPost } from "../../types"
+import { TPost } from "src/types"
+import { useRouter } from "next/router"
 
 const HEADER_HEIGHT = 73
 
@@ -21,7 +22,32 @@ type Props = {
 }
 
 const Feed: React.FC<Props> = ({ posts, allTags }) => {
-  const [q, setQ] = useState("")
+  const router = useRouter()
+  const [q, setQ] = useState((router.query.q as string) || "")
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    const query = { ...router.query }
+
+    if (q) {
+      query.q = q
+    }
+    else {
+      delete query.q
+    }
+
+    delete query.page
+
+    router.push({
+      pathname: '/',
+      query: query,
+    })
+  }
+
+  useEffect(() => {
+    setQ((router.query.q as string) || "")
+  }, [router.query.q])
 
   return (
     <StyledWrapper>
@@ -36,7 +62,7 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
       <div className="mid">
         <MobileProfileCard />
         <PinnedPosts q={q} />
-        <SearchInput value={q} onChange={(e) => setQ(e.target.value)} />
+        <SearchInput value={q} onChange={(e) => setQ(e.target.value)} onSubmit={handleSearch} />
         <div className="tags">
           <TagList allTags={allTags} />
         </div>

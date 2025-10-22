@@ -1,8 +1,5 @@
-import { useRouter } from "next/router"
-import React, { useEffect, useState } from "react"
 import PostCard from "src/routes/Feed/PostList/PostCard"
-import { DEFAULT_CATEGORY } from "src/constants"
-import { TPost } from "../../../types"
+import { TPost } from "src/types"
 
 type Props = {
   posts: TPost[]
@@ -10,58 +7,18 @@ type Props = {
 }
 
 const PostList: React.FC<Props> = ({ posts, q }) => {
-  const router = useRouter()
-  const [filteredPosts, setFilteredPosts] = useState(posts)
-
-  const currentTag = `${router.query.tag || ``}` || undefined
-  const currentCategory = `${router.query.category || ``}` || DEFAULT_CATEGORY
-  const currentOrder = `${router.query.order || ``}` || "desc"
-
-  useEffect(() => {
-    setFilteredPosts(() => {
-      let newFilteredPosts = posts
-      // keyword
-      newFilteredPosts = newFilteredPosts.filter((post) => {
-        const tagContent = post.tags ? post.tags.join(" ") : ""
-        const searchContent = post.title + post.summary + tagContent
-        return searchContent.toLowerCase().includes(q.toLowerCase())
-      })
-
-      // tag
-      if (currentTag) {
-        newFilteredPosts = newFilteredPosts.filter(
-          (post) => post && post.tags && post.tags.includes(currentTag)
-        )
-      }
-
-      // category
-      if (currentCategory !== DEFAULT_CATEGORY) {
-        newFilteredPosts = newFilteredPosts.filter(
-          (post) =>
-            post && post.category && post.category.includes(currentCategory)
-        )
-      }
-      // order
-      if (currentOrder !== "desc") {
-        newFilteredPosts = newFilteredPosts.reverse()
-      }
-
-      return newFilteredPosts
-    })
-  }, [posts, q, currentTag, currentCategory, currentOrder, setFilteredPosts])
-
   return (
     <>
       <div className="my-2">
-        {!filteredPosts.length && (
+        {!posts.length && (
           <p className="text-gray-500 dark:text-gray-300">Nothing! 😺</p>
         )}
-        {filteredPosts.map((post) => (
+        {posts.map((post) => (
           <PostCard key={post.id} data={post} />
         ))}
       </div>
     </>
-  )
+  );
 }
 
 export default PostList
