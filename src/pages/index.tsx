@@ -31,8 +31,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   let filteredPosts = posts
 
-  filteredPosts.filter(
-    (post) => post.status?.[0] !== 'Private'
+  filteredPosts = filteredPosts.filter(
+    (post) => post.status?.includes('Public')
   )
 
   if (currentTag) {
