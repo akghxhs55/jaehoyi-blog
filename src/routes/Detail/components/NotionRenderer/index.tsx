@@ -228,4 +228,33 @@ const StyledWrapper = styled.div`
   .notion-list {
     width: 100%;
   }
+
+  /* Code block copy button sizing and layout */
+  .notion-code {
+    position: relative;
+  }
+  .notion-code pre {
+    padding-right: 2.25rem !important; /* reserve space for smaller copy button */
+    overflow-x: auto; /* only scroll when content actually overflows */
+  }
+  .notion-code .notion-code-copy,
+  .notion-code .notion-code-copy-button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  /* Icon size inside the button */
+  .notion-code .notion-code-copy svg,
+  .notion-code .notion-code-copy-button svg {
+    width: 16px;
+    height: 16px;
+  }
 `
