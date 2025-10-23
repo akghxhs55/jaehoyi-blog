@@ -13,7 +13,7 @@ import "prismjs/themes/prism-tomorrow.css"
 // used for rendering equations (optional)
 
 import "katex/dist/katex.min.css"
-import { FC, useEffect, useRef } from "react"
+import { FC, useRef } from "react"
 import styled from "@emotion/styled"
 
 const _NotionRenderer = dynamic(
@@ -22,7 +22,8 @@ const _NotionRenderer = dynamic(
 )
 
 const Code = dynamic(() =>
-  import("react-notion-x/build/third-party/code").then(async (m) => m.Code)
+  import("react-notion-x/build/third-party/code").then(async (m) => m.Code),
+  { ssr: false }
 )
 
 const Collection = dynamic(() =>
@@ -57,38 +58,6 @@ type Props = {
 const NotionRenderer: FC<Props> = ({ recordMap }) => {
   const [scheme] = useScheme()
   const containerRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const convertDivsToParagraphs = () => {
-      const notionTextDivs = container.querySelectorAll("div.notion-text")
-      notionTextDivs.forEach((div) => {
-        if (div.tagName === "P") return
-
-        const p = document.createElement("p")
-        p.className = div.className
-        p.innerHTML = div.innerHTML
-        div.parentNode?.replaceChild(p, div)
-      })
-    }
-
-    const callback: MutationCallback = (mutationsList) => {
-      for (const mutation of mutationsList) {
-        if (mutation.type === "childList") {
-          convertDivsToParagraphs()
-        }
-      }
-    }
-
-    const observer = new MutationObserver(callback)
-    observer.observe(container, { childList: true, subtree: true })
-    convertDivsToParagraphs()
-    return () => {
-      observer.disconnect()
-    }
-  }, [recordMap])
 
   return (
     <StyledWrapper ref={containerRef}>
