@@ -3,17 +3,40 @@ import Logo from "./Logo"
 import ThemeToggle from "./ThemeToggle"
 import styled from "@emotion/styled"
 import { zIndexes } from "src/styles/zIndexes"
+import usePostQuery from "src/hooks/usePostQuery"
+import { useRouter } from "next/router"
+import React from "react"
+
 
 type Props = {
   fullWidth: boolean
 }
 
 const Header: React.FC<Props> = ({ fullWidth }) => {
+  const router = useRouter()
+  const post = usePostQuery()
+  const showTitle = Boolean(post?.title) && router.pathname === "/[slug]"
+
+  const handleSearchSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const q = (formData.get("q") as string)?.trim()
+    if (q) {
+      router.push({ pathname: "/", query: { q } })
+    } else {
+      router.push("/")
+    }
+  }
+
   return (
     <StyledWrapper>
       <div data-full-width={fullWidth} className="container">
         <Logo />
+        {showTitle && <div className="title" title={post!.title}>{post!.title}</div>}
         <div className="nav">
+          <form className="search" onSubmit={handleSearchSubmit}>
+            <input name="q" type="search" placeholder="Search..." aria-label="Search posts" />
+          </form>
           <ThemeToggle />
           <NavBar />
         </div>
@@ -28,14 +51,16 @@ const StyledWrapper = styled.div`
   z-index: ${zIndexes.header};
   position: sticky;
   top: 0;
-  background-color: ${({ theme }) => theme.colors.gray2};
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  backdrop-filter: saturate(180%) blur(8px);
+  background-color: ${({ theme }) => theme.scheme === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(22,22,22,0.5)'};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.gray6};
 
   .container {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    column-gap: 0.75rem;
     padding-left: 1rem;
     padding-right: 1rem;
-    justify-content: space-between;
     align-items: center;
     width: 100%;
     max-width: 1120px;
@@ -47,10 +72,39 @@ const StyledWrapper = styled.div`
         padding-right: 6rem;
       }
     }
+    .title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: ${({ theme }) => theme.colors.gray11};
+      font-size: 0.95rem;
+      text-align: center;
+    }
     .nav {
       display: flex;
-      gap: 0.75rem;
+      gap: 0.5rem;
       align-items: center;
+      justify-content: flex-end;
+    }
+    .search {
+      display: none;
+    }
+    @media (min-width: 640px) {
+      .search {
+        display: block;
+      }
+      .search input {
+        height: 28px;
+        border-radius: 9999px;
+        padding: 0 10px;
+        background: ${({ theme }) => theme.colors.gray4};
+        border: 1px solid ${({ theme }) => theme.colors.gray6};
+        color: ${({ theme }) => theme.colors.gray12};
+        font-size: 0.9rem;
+        outline: none;
+        width: 180px;
+      }
     }
   }
 `
