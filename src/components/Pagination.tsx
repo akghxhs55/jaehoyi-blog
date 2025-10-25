@@ -218,7 +218,6 @@ const StyledWrapper = styled.div`
   .page-number {
     &[data-active="true"] {
       font-weight: 700;
-      color: ${({ theme }) => theme.colors.gray1 ?? '#fff'};
       background-color: ${({ theme }) => theme.colors.blue9};
       border-color: ${({ theme }) => theme.colors.blue9};
     }
