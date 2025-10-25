@@ -23,46 +23,45 @@ const PaginatedPage: NextPage<Props> = ({ posts, currentPage, totalPages, allTag
 }
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
+  // Cache-Control for CDN (Vercel Edge/CDN)
+  const swr = Math.max(60, Number(CONFIG.revalidateTime || 0))
+  context.res.setHeader(
+    "Cache-Control",
+    `public, s-maxage=${swr}, stale-while-revalidate=${Math.max(60, Math.floor(swr / 2))}`
+  )
+
   const posts = await getPosts()
 
-  const currentTag = context.query.tag as string || null
-  const currentSearch = context.query.q as string || null
-  const currentCategory = context.query.category as string || DEFAULT_CATEGORY
-  const currentOrder = context.query.order as string || "desc"
+  const currentTag = (context.query.tag as string) || null
+  const currentSearch = (context.query.q as string) || null
+  const currentCategory = (context.query.category as string) || DEFAULT_CATEGORY
+  const currentOrder = (context.query.order as string) || "desc"
 
   let filteredPosts = posts
 
-  filteredPosts = filteredPosts.filter(
-    (post) => post.status?.includes('Public')
-  )
+  filteredPosts = filteredPosts.filter((post) => post.status?.includes('Public'))
 
   if (currentTag) {
-    filteredPosts = filteredPosts.filter(
-      (post) => post.tags?.includes(currentTag)
-    )
+    filteredPosts = filteredPosts.filter((post) => post.tags?.includes(currentTag))
   }
 
   if (currentSearch) {
     const normalizedSearch = currentSearch.toLowerCase().replace(/\s/g, "")
 
-    filteredPosts = filteredPosts.filter(
-      (post) => {
-        const tagContent = post.tags ? post.tags.join(" ") : ""
-        const searchContent = post.title + post.summary + tagContent
-        const normalizedContent = searchContent.toLowerCase().replace(/\s/g, "")
-        return normalizedContent.includes(normalizedSearch)
-      }
-    )
+    filteredPosts = filteredPosts.filter((post) => {
+      const tagContent = post.tags ? post.tags.join(" ") : ""
+      const searchContent = post.title + post.summary + tagContent
+      const normalizedContent = searchContent.toLowerCase().replace(/\s/g, "")
+      return normalizedContent.includes(normalizedSearch)
+    })
   }
 
   if (currentCategory !== DEFAULT_CATEGORY) {
-    filteredPosts.filter(
-      (post) => post.category?.includes(currentCategory)
-    )
+    filteredPosts = filteredPosts.filter((post) => post.category?.includes(currentCategory))
   }
 
   if (currentOrder !== "desc") {
-    filteredPosts.reverse()
+    filteredPosts = [...filteredPosts].reverse()
   }
 
   const page = parseInt((context.params?.page as string) || "1")
@@ -72,9 +71,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const startIndex = (page - 1) * postsPerPage
   const paginatedPosts = filteredPosts.slice(startIndex, startIndex + postsPerPage)
 
-  const allTags = Array.from(
-    new Set(posts.flatMap((post) => post.tags || []))
-  )
+  const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])))
 
   return {
     props: {

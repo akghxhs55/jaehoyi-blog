@@ -10,8 +10,17 @@ import { TPosts } from "src/types"
  * @param {{ includePages: boolean }} - false: posts only / true: include pages
  */
 
+// Simple in-memory cache to avoid hitting Notion on every request
+let POSTS_CACHE: { data: TPosts; ts: number } | null = null
+
 // TODO: react query를 사용해서 처음 불러온 뒤로는 해당데이터만 사용하도록 수정
 export const getPosts = async () => {
+  const ttl = Math.max(60, Number(CONFIG.revalidateTime || 0)) * 1000 // ms
+  const now = Date.now()
+  if (POSTS_CACHE && now - POSTS_CACHE.ts < ttl) {
+    return POSTS_CACHE.data
+  }
+
   let id = CONFIG.notionConfig.pageId as string
   const api = new NotionAPI()
 
@@ -28,6 +37,7 @@ export const getPosts = async () => {
     rawMetadata?.type !== "collection_view_page" &&
     rawMetadata?.type !== "collection_view"
   ) {
+    POSTS_CACHE = { data: [], ts: now }
     return []
   } else {
     // Construct Data
@@ -54,6 +64,7 @@ export const getPosts = async () => {
     })
 
     const posts = data as TPosts
+    POSTS_CACHE = { data: posts, ts: now }
     return posts
   }
 }
