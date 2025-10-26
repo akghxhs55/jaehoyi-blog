@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react'
 
 type useDropdownType = () => [
-  React.RefObject<HTMLDivElement>,
+  React.RefObject<HTMLDivElement | null>,
   boolean,
   () => void
 ]
@@ -19,7 +19,7 @@ const useDropdown: useDropdownType = () => {
   const handleClick: (this: Window, e: MouseEvent) => void = (e) => {
     if (!menuRef.current) return
     assertIsNode(e.target)
-    if (menuRef.current.contains(e.target) === false) {
+    if (!menuRef.current.contains(e.target)) {
       setIsDropdownOpened(false)
     }
   }
