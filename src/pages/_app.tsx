@@ -1,5 +1,5 @@
 import { AppPropsWithLayout } from "../types"
-import { Hydrate, QueryClientProvider } from "@tanstack/react-query"
+import { HydrationBoundary, QueryClientProvider } from "@tanstack/react-query"
 import { RootLayout } from "src/layouts"
 import { queryClient } from "src/libs/react-query"
 import Head from "next/head" // 1. next/head에서 Head를 가져옵니다.
@@ -8,6 +8,13 @@ import { CONFIG } from "site.config" // 2. 설정 파일 경로 (기존에 있�
 import Router from "next/router"
 import NProgress from "nprogress"
 import "nprogress/nprogress.css"
+import "katex/dist/katex.min.css"
+
+// core styles shared by all of react-notion-x (required)
+import "react-notion-x/src/styles.css"
+
+// used for code syntax highlighting (optional)
+import "prismjs/themes/prism-tomorrow.css"
 
 Router.events.on("routeChangeStart", () => NProgress.start())
 Router.events.on("routeChangeComplete", () => NProgress.done())
@@ -25,9 +32,9 @@ function App({ Component, pageProps }: AppPropsWithLayout) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <Hydrate state={pageProps.dehydratedState}>
+      <HydrationBoundary state={pageProps.dehydratedState}>
         <RootLayout>{getLayout(<Component {...pageProps} />)}</RootLayout>
-      </Hydrate>
+      </HydrationBoundary>
     </QueryClientProvider>
   )
 }

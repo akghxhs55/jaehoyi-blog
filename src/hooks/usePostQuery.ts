@@ -5,9 +5,14 @@ import { PostDetail } from "src/types"
 
 const usePostQuery = () => {
   const router = useRouter()
-  const { slug } = router.query
+  const { slug: rawSlug } = router.query
+  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug
+
+  // Use a stable placeholder key until slug is a string; keep enabled:false to avoid fetching.
+  const stableKey = typeof slug === "string" ? queryKey.post(slug) : queryKey.post("")
+
   const { data } = useQuery<PostDetail>({
-    queryKey: queryKey.post(`${slug}`),
+    queryKey: stableKey,
     enabled: false,
   })
 

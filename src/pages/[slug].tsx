@@ -6,11 +6,11 @@ import CustomError from "src/routes/Error"
 import { getRecordMap, getPosts } from "src/apis"
 import MetaConfig from "src/components/MetaConfig"
 import { GetStaticProps } from "next"
-import { queryClient } from "src/libs/react-query"
+import { QueryClient, dehydrate } from "@tanstack/react-query"
 import { queryKey } from "src/constants/queryKey"
-import { dehydrate } from "@tanstack/react-query"
 import usePostQuery from "src/hooks/usePostQuery"
 import { FilterPostsOptions } from "src/libs/utils/notion/filterPosts"
+import { useRouter } from "next/router"
 
 const filter: FilterPostsOptions = {
   acceptStatus: ["Public", "PublicOnDetail"],
@@ -28,31 +28,61 @@ export const getStaticPaths = async () => {
 }
 
 export const getStaticProps: GetStaticProps = async (context) => {
-  const slug = context.params?.slug
+  const rawSlug = context.params?.slug
+  const slug = Array.isArray(rawSlug) ? rawSlug[0] : rawSlug
+
+  if (!slug) {
+    return {
+      notFound: true,
+      revalidate: CONFIG.revalidateTime,
+    }
+  }
+
+  const qc = new QueryClient()
 
   const posts = await getPosts()
   const feedPosts = filterPosts(posts)
-  await queryClient.prefetchQuery(queryKey.posts(), () => feedPosts)
+  await qc.prefetchQuery({
+    queryKey: queryKey.posts(),
+    queryFn: async () => feedPosts,
+  })
 
   const detailPosts = filterPosts(posts, filter)
   const postDetail = detailPosts.find((t: any) => t.slug === slug)
-  const recordMap = await getRecordMap(postDetail?.id!)
 
-  await queryClient.prefetchQuery(queryKey.post(`${slug}`), () => ({
-    ...postDetail,
-    recordMap,
-  }))
+  if (!postDetail) {
+    return {
+      notFound: true,
+      revalidate: CONFIG.revalidateTime,
+    }
+  }
+
+  const recordMap = await getRecordMap(postDetail.id)
+
+  await qc.prefetchQuery({
+    queryKey: queryKey.post(slug),
+    queryFn: async () => ({
+      ...postDetail,
+      recordMap,
+    }),
+  })
 
   return {
     props: {
-      dehydratedState: dehydrate(queryClient),
+      dehydratedState: dehydrate(qc),
     },
     revalidate: CONFIG.revalidateTime,
   }
 }
 
 const DetailPage: NextPageWithLayout = () => {
+  const router = useRouter()
   const post = usePostQuery()
+
+  // Handle Next.js fallback and router readiness to avoid premature 404
+  if (router.isFallback || !router.isReady) {
+    return null
+  }
 
   if (!post) return <CustomError />
 
