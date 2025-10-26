@@ -15,9 +15,12 @@ module.exports = {
       },
     ],
   },
-  serverExternalPackages: [
+  // Ensure Notion-related ESM/CJS packages are bundled for SSR on Vercel
+  // to avoid "Failed to load external module ... notion-client/notion-utils" errors.
+  transpilePackages: [
     "notion-client",
-    "notion-types",
     "notion-utils",
+    "notion-types",
+    "react-notion-x",
   ],
 };
