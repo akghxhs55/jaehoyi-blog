@@ -1,23 +1,43 @@
 import styled from "@emotion/styled"
 import React from "react"
-import Link from "next/link"
+import { useRouter } from "next/router"
 
 type Props = {
   children: string
 }
 
 const Tag: React.FC<Props> = ({ children }) => {
-  const href = `/?tag=${encodeURIComponent(children)}`
+  const router = useRouter()
+
+  const navigateToTag = () => {
+    const href = `/?tag=${encodeURIComponent(children)}`
+    router.push(href)
+  }
+
+  const handleClick: React.MouseEventHandler<HTMLSpanElement> = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    navigateToTag()
+  }
+
+  const handleKeyDown: React.KeyboardEventHandler<HTMLSpanElement> = (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault()
+      e.stopPropagation()
+      navigateToTag()
+    }
+  }
+
   return (
-    <Link href={href} passHref legacyBehavior>
-      <StyledWrapper as="a">{children}</StyledWrapper>
-    </Link>
+    <StyledWrapper role="link" tabIndex={0} onClick={handleClick} onKeyDown={handleKeyDown}>
+      {children}
+    </StyledWrapper>
   )
 }
 
 export default Tag
 
-const StyledWrapper = styled.div`
+const StyledWrapper = styled.span`
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
   padding-left: 0.5rem;
