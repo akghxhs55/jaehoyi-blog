@@ -1,21 +1,17 @@
 import styled from "@emotion/styled"
-import { useRouter } from "next/router"
 import React from "react"
+import Link from "next/link"
 
 type Props = {
   children: string
 }
 
 const Tag: React.FC<Props> = ({ children }) => {
-  const router = useRouter()
-
-  const handleClick = (value: string) => {
-    router.push(`/?tag=${value}`)
-  }
+  const href = `/?tag=${encodeURIComponent(children)}`
   return (
-    <StyledWrapper onClick={() => handleClick(children)}>
-      {children}
-    </StyledWrapper>
+    <Link href={href} passHref legacyBehavior>
+      <StyledWrapper as="a">{children}</StyledWrapper>
+    </Link>
   )
 }
 
