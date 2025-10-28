@@ -25,12 +25,14 @@ const MetaConfig: React.FC<MetaConfigProps> = (props) => {
       <meta name="robots" content="follow, index" />
       <meta charSet="UTF-8" />
       <meta name="description" content={props.description} />
+      <link rel="canonical" href={props.url} />
       {/* og */}
       <meta property="og:type" content={props.type} />
       <meta property="og:title" content={props.title} />
       <meta property="og:site_name" content={CONFIG.profile.name} />
       <meta property="og:description" content={props.description} />
       <meta property="og:url" content={props.url} />
+      <meta property="og:updated_time" content={props.date} />
       {CONFIG.lang && <meta property="og:locale" content={CONFIG.lang} />}
       {props.image && <meta property="og:image" content={props.image} />}
       {/* twitter */}
