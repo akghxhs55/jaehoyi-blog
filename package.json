@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "postbuild": "next-sitemap --config next-sitemap.config.js && tsx -r dotenv/config ./scripts/generate-rss.ts",
+    "postbuild": "tsx -r dotenv/config ./scripts/generate-rss.ts",
     "lint": "next lint"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "cookies-next": "^6.1.1",
     "mermaid": "^11.12.0",
     "next": "^16.0.0",
+    "next-sitemap": "^4.2.3",
     "notion-client": "^7.7.1",
     "notion-types": "^7.7.1",
     "notion-utils": "^7.7.1",
