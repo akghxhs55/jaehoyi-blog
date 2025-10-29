@@ -5,6 +5,7 @@ import Feed from "src/routes/Feed" // 기존 메인 페이지의 Feed 컴포넌�
 import Pagination from "src/components/Pagination" // 새로 만들 컴포넌트
 import { TPost } from "src/types"
 import { DEFAULT_CATEGORY } from "src/constants"
+import MetaConfig from "src/components/MetaConfig"
 
 type Props = {
   posts: TPost[]
@@ -14,8 +15,15 @@ type Props = {
 }
 
 const PaginatedPage: NextPage<Props> = ({ posts, currentPage, totalPages, allTags }) => {
+  const meta = {
+    title: CONFIG.blog.title,
+    description: CONFIG.blog.description,
+    type: "Website",
+    url: `${CONFIG.link}/page/${currentPage}`,
+  }
   return (
     <>
+      <MetaConfig {...meta} />
       <Feed posts={posts} allTags={allTags} />
       <Pagination currentPage={currentPage} totalPages={totalPages} />
     </>

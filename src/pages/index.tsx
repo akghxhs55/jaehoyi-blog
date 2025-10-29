@@ -5,6 +5,7 @@ import Feed from "src/routes/Feed"
 import Pagination from "src/components/Pagination"
 import { TPost } from "src/types"
 import { DEFAULT_CATEGORY } from "src/constants"
+import MetaConfig from "src/components/MetaConfig"
 
 type Props = {
   posts: TPost[]
@@ -13,8 +14,15 @@ type Props = {
 }
 
 const HomePage: NextPage<Props> = ({ posts, totalPages, allTags }) => {
+  const meta = {
+    title: CONFIG.blog.title,
+    description: CONFIG.blog.description,
+    type: "Website",
+    url: CONFIG.link,
+  }
   return (
     <>
+      <MetaConfig {...meta} />
       <Feed posts={posts} allTags={allTags} />
       <Pagination currentPage={1} totalPages={totalPages} />
     </>
