@@ -23,31 +23,80 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
       (p: any) => p?.slug && p?.status?.includes?.("Public")
     )
 
-    const urls = visible.map((post: any) => {
-      const dateStr = post?.date?.start_date || post?.createdTime || Date.now()
-      const loc = `${CONFIG.link}/${post.slug}`
-      return {
-        loc: encodeURI(loc),
-        lastmod: new Date(dateStr).toISOString(),
-        changefreq: "daily",
-        priority: "0.7",
-      }
-    })
+    const urls: { loc: string; lastmod: string; changefreq: string; priority: string }[] = []
 
+    // Root entry
     const latest =
       visible?.[0]?.date?.start_date || visible?.[0]?.createdTime || Date.now()
-
-    // Root entry first
-    urls.unshift({
+    urls.push({
       loc: CONFIG.link,
       lastmod: new Date(latest).toISOString(),
       changefreq: "daily",
       priority: "1.0",
     })
 
+    // Pagination pages: /page/1..N (cap at 5 to keep sitemap small)
+    const postsPerPage = (CONFIG as any).postsPerPage || 10
+    const totalPages = Math.max(1, Math.ceil(visible.length / postsPerPage))
+    const pageCap = Math.min(5, totalPages)
+    for (let p = 1; p <= pageCap; p++) {
+      urls.push({
+        loc: `${CONFIG.link}/page/${p}`,
+        lastmod: new Date(latest).toISOString(),
+        changefreq: "daily",
+        priority: "0.6",
+      })
+    }
+
+    // Top tags and categories list pages (page 1)
+    const tagCount: Record<string, number> = {}
+    const catCount: Record<string, number> = {}
+    for (const post of visible) {
+      for (const t of post.tags || []) tagCount[t] = (tagCount[t] || 0) + 1
+      const c = post.category
+      if (c) catCount[c] = (catCount[c] || 0) + 1
+    }
+    const topTags = Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50)
+      .map(([t]) => t)
+    const topCats = Object.entries(catCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50)
+      .map(([c]) => c)
+
+    for (const t of topTags) {
+      urls.push({
+        loc: `${CONFIG.link}/tag/${encodeURIComponent(t)}`,
+        lastmod: new Date(latest).toISOString(),
+        changefreq: "daily",
+        priority: "0.5",
+      })
+    }
+    for (const c of topCats) {
+      urls.push({
+        loc: `${CONFIG.link}/category/${encodeURIComponent(c)}`,
+        lastmod: new Date(latest).toISOString(),
+        changefreq: "daily",
+        priority: "0.5",
+      })
+    }
+
+    // Individual post URLs
+    for (const post of visible) {
+      const dateStr = post?.date?.start_date || post?.createdTime || Date.now()
+      const loc = `${CONFIG.link}/${post.slug}`
+      urls.push({
+        loc: encodeURI(loc),
+        lastmod: new Date(dateStr).toISOString(),
+        changefreq: "daily",
+        priority: "0.7",
+      })
+    }
+
     const body =
-      `<?xml version="1.0" encoding="UTF-8"?>` +
-      `\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` +
+      `<?xml version=\"1.0\" encoding=\"UTF-8\"?>` +
+      `\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">` +
       urls
         .map(
           (u) =>
@@ -70,8 +119,8 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     res.end()
   } catch (e) {
     const fallback =
-      `<?xml version="1.0" encoding="UTF-8"?>` +
-      `\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` +
+      `<?xml version=\"1.0\" encoding=\"UTF-8\"?>` +
+      `\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">` +
       `\n  <url>` +
       `\n    <loc>${escapeXml(CONFIG.link)}</loc>` +
       `\n    <lastmod>${new Date().toISOString()}</lastmod>` +

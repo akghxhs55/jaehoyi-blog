@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Head from "next/head"
 
 import SearchInput from "./SearchInput"
 import { FeedHeader } from "./FeedHeader"
@@ -13,6 +14,8 @@ import PostList from "./PostList"
 import PinnedPosts from "./PostList/PinnedPosts"
 import { TPost } from "src/types"
 import { useRouter } from "next/router"
+import { filterPosts } from "./PostList/filterPosts"
+import { DEFAULT_CATEGORY } from "src/constants"
 
 const HEADER_HEIGHT = 73
 
@@ -29,63 +32,76 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
     e.preventDefault()
 
     const query = { ...router.query }
+    const tag = query.tag as string | undefined
+    const category = query.category as string | undefined
 
-    if (q) {
-      query.q = q
-    }
-    else {
-      delete query.q
-    }
+    if (q) query.q = q
+    else delete query.q
 
-    delete query.page
+    delete (query as any).page
+    // Route-based navigation: keep current context (tag/category) if present
+    let pathname = '/'
+    if (category) pathname = `/category/${encodeURIComponent(category)}`
+    else if (tag) pathname = `/tag/${encodeURIComponent(tag)}`
 
-    router.push({
-      pathname: '/',
-      query: query,
-    })
+    router.push({ pathname, query })
   }
 
   useEffect(() => {
     setQ((router.query.q as string) || "")
   }, [router.query.q])
 
+  const displayedPosts = useMemo(() => {
+    const tag = typeof router.query.tag === 'string' ? router.query.tag : undefined
+    const category = typeof router.query.category === 'string' ? router.query.category : DEFAULT_CATEGORY
+    const order = (typeof router.query.order === 'string' ? router.query.order : 'desc') as 'asc' | 'desc'
+    return filterPosts({ posts, q, tag, category, order })
+  }, [posts, q, router.query.tag, router.query.category, router.query.order])
+
   return (
-    <StyledWrapper>
-      <div
-        className="lt"
-        css={{
-          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
-        }}
-      >
-        <TagList allTags={allTags} />
-      </div>
-      <div className="mid">
-        <MobileProfileCard />
-        <PinnedPosts q={q} />
-        <SearchInput value={q} onChange={(e) => setQ(e.target.value)} onSubmit={handleSearch} />
-        <div className="tags">
+    <>
+      {q && (
+        <Head>
+          <meta name="robots" content="noindex,follow" />
+        </Head>
+      )}
+      <StyledWrapper>
+        <div
+          className="lt"
+          css={{
+            height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+          }}
+        >
           <TagList allTags={allTags} />
         </div>
-        <FeedHeader />
-        <PostList posts={posts} q={q} />
-        <div className="footer">
-          <Footer />
+        <div className="mid">
+          <MobileProfileCard />
+          <PinnedPosts q={q} />
+          <SearchInput value={q} onChange={(e) => setQ(e.target.value)} onSubmit={handleSearch} />
+          <div className="tags">
+            <TagList allTags={allTags} />
+          </div>
+          <FeedHeader />
+          <PostList posts={displayedPosts} q={q} />
+          <div className="footer">
+            <Footer />
+          </div>
         </div>
-      </div>
-      <div
-        className="rt"
-        css={{
-          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
-        }}
-      >
-        <ProfileCard />
-        <ServiceCard />
-        <ContactCard />
-        <div className="footer">
-          <Footer />
+        <div
+          className="rt"
+          css={{
+            height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+          }}
+        >
+          <ProfileCard />
+          <ServiceCard />
+          <ContactCard />
+          <div className="footer">
+            <Footer />
+          </div>
         </div>
-      </div>
-    </StyledWrapper>
+      </StyledWrapper>
+    </>
   )
 }
 

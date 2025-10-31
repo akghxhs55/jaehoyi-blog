@@ -2,7 +2,6 @@ import styled from "@emotion/styled"
 import { useRouter } from "next/router"
 import React from "react"
 import { Emoji } from "src/components/Emoji"
-import { useTagsQuery } from "src/hooks/useTagsQuery"
 
 type Props = {
   allTags: string[]
@@ -10,26 +9,14 @@ type Props = {
 
 const TagList: React.FC<Props> = ({ allTags }) => {
   const router = useRouter()
-  const currentTag = router.query.tag as string || null
+  const currentTag = (router.query.tag as string) || null
 
-  const handleClickTag = (value: any) => {
-    const query = { ...router.query }
-
-    // delete
+  const handleClickTag = (value: string) => {
     if (currentTag === value) {
-      delete query.tag
+      router.push(`/`)
+    } else {
+      router.push(`/tag/${encodeURIComponent(value)}`)
     }
-    // add
-    else {
-      query.tag = value
-    }
-
-    delete query.page
-
-    router.push({
-      pathname: '/',
-      query: query,
-    })
   }
 
   return (

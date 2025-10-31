@@ -23,4 +23,29 @@ module.exports = {
     "notion-types",
     "react-notion-x",
   ],
+  async redirects() {
+    return [
+      // /?tag=foo -> /tag/foo
+      {
+        source: '/',
+        has: [{ type: 'query', key: 'tag' }],
+        permanent: true,
+        destination: '/tag/:tag',
+      },
+      // /?category=bar -> /category/bar
+      {
+        source: '/',
+        has: [{ type: 'query', key: 'category' }],
+        permanent: true,
+        destination: '/category/:category',
+      },
+      // /?page=2 -> /page/2
+      {
+        source: '/',
+        has: [{ type: 'query', key: 'page' }],
+        permanent: true,
+        destination: '/page/:page',
+      },
+    ]
+  },
 };

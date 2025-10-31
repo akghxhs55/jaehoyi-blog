@@ -11,14 +11,26 @@ const Pagination = ({ totalPages, currentPage }: Props) => {
   const router = useRouter()
 
   const getPageLink = (page: number) => {
-    const query = { ...router.query }
-    // Avoid duplicating page in both path and query
-    // Keep other query params (e.g., tag, category) but remove `page`
-    delete (query as any).page
-    if (page === 1) {
-      return { pathname: '/', query }
+    const q = typeof router.query.q === 'string' ? router.query.q : undefined
+    const tag = typeof router.query.tag === 'string' ? router.query.tag : undefined
+    const category = typeof router.query.category === 'string' ? router.query.category : undefined
+
+    let path = '/'
+    if (tag) {
+      path = `/tag/${encodeURIComponent(tag)}`
+      if (page > 1) path += `/page/${page}`
+    } else if (category) {
+      path = `/category/${encodeURIComponent(category)}`
+      if (page > 1) path += `/page/${page}`
+    } else {
+      path = page === 1 ? '/' : `/page/${page}`
     }
-    return { pathname: `/page/${page}`, query }
+
+    if (q) {
+      const sep = path.includes('?') ? '&' : '?'
+      path += `${sep}q=${encodeURIComponent(q)}`
+    }
+    return path
   }
 
   // Fixed number of page buttons (no dynamic adjustment)

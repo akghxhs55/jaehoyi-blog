@@ -10,7 +10,7 @@ const Tag: React.FC<Props> = ({ children }) => {
   const router = useRouter()
 
   const navigateToTag = () => {
-    const href = `/?tag=${encodeURIComponent(children)}`
+    const href = `/tag/${encodeURIComponent(children)}`
     router.push(href)
   }
 
