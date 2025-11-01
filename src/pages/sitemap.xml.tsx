@@ -53,7 +53,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     const catCount: Record<string, number> = {}
     for (const post of visible) {
       for (const t of post.tags || []) tagCount[t] = (tagCount[t] || 0) + 1
-      const c = post.category
+      const c = Array.isArray(post.category) ? post.category[0] : post.category
       if (c) catCount[c] = (catCount[c] || 0) + 1
     }
     const topTags = Object.entries(tagCount)

@@ -79,9 +79,10 @@ const DetailPage: NextPageWithLayout = () => {
   const router = useRouter()
   const post = usePostQuery()
 
-  // Handle Next.js fallback and router readiness to avoid premature 404
-  if (router.isFallback || !router.isReady) {
-    return null
+  // Avoid gating on router.isReady to keep SSR/CSR trees aligned.
+  // For fallback paths, render the detail skeleton (Detail renders a skeleton when data is absent).
+  if (router.isFallback) {
+    return <Detail />
   }
 
   if (!post) return <CustomError />

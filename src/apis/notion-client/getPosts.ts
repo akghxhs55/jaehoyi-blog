@@ -5,19 +5,32 @@ import { idToUuid } from "notion-utils"
 import getAllPageIds from "src/libs/utils/notion/getAllPageIds"
 import getPageProperties from "src/libs/utils/notion/getPageProperties"
 import { TPosts } from "src/types"
+import { kvGet, kvSet } from "src/libs/cache/kv"
 
 /**
  * @param {{ includePages: boolean }} - false: posts only / true: include pages
  */
 
-// Simple in-memory cache to avoid hitting Notion on every request
+// Simple in-memory cache to avoid hitting Notion on every request (per instance)
 let POSTS_CACHE: { data: TPosts; ts: number } | null = null
 
 // TODO: react query를 사용해서 처음 불러온 뒤로는 해당데이터만 사용하도록 수정
 export const getPosts = async () => {
-  const ttl = Math.max(60, Number(CONFIG.revalidateTime || 0)) * 1000 // ms
+  const ttlSec = Math.max(60, Number(CONFIG.revalidateTime || 0)) // seconds
+  const ttlMs = ttlSec * 1000
   const now = Date.now()
-  if (POSTS_CACHE && now - POSTS_CACHE.ts < ttl) {
+
+  // 1) Try global KV cache first (works across instances and restarts)
+  const kvKey = "notion:posts"
+  const kvCached = await kvGet<TPosts>(kvKey)
+  if (kvCached && Array.isArray(kvCached)) {
+    // Update per-instance memory cache for faster subsequent hits
+    POSTS_CACHE = { data: kvCached, ts: now }
+    return kvCached
+  }
+
+  // 2) Fallback to per-instance memory cache
+  if (POSTS_CACHE && now - POSTS_CACHE.ts < ttlMs) {
     return POSTS_CACHE.data
   }
 
@@ -38,6 +51,8 @@ export const getPosts = async () => {
     rawMetadata?.type !== "collection_view"
   ) {
     POSTS_CACHE = { data: [], ts: now }
+    // Populate empty list to KV to avoid repeated Notion hits if misconfigured
+    await kvSet<TPosts>(kvKey, [], ttlSec)
     return []
   } else {
     // Construct Data
@@ -65,6 +80,8 @@ export const getPosts = async () => {
 
     const posts = data as TPosts
     POSTS_CACHE = { data: posts, ts: now }
+    // Write-through to KV for cross-instance caching
+    await kvSet<TPosts>(kvKey, posts, ttlSec)
     return posts
   }
 }

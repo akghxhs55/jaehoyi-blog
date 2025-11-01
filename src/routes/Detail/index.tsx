@@ -10,11 +10,18 @@ const Detail: React.FC<Props> = () => {
   const data = usePostQuery()
   useMermaidEffect()
 
-  if (!data) return null
+  // Always render a stable wrapper to avoid SSR/CSR tree mismatch
+  const type = data?.type?.[0] ?? "Post"
+
   return (
-    <StyledWrapper data-type={data.type?.[0]}>
-      {data.type?.[0] === "Page" && <PageDetail />}
-      {data.type?.[0] !== "Page" && <PostDetail />}
+    <StyledWrapper data-type={type}>
+      {!data ? (
+        <Skeleton />
+      ) : type === "Page" ? (
+        <PageDetail />
+      ) : (
+        <PostDetail />
+      )}
     </StyledWrapper>
   )
 }
@@ -33,3 +40,14 @@ const StyledWrapper = styled.div`
     background-color: ${({ theme }) => theme.colors.gray5};
   }
 `
+
+const Skeleton = () => {
+  return (
+    <div style={{ display: "grid", gap: "12px" }}>
+      <div style={{ height: 28, width: "60%", background: "#e1e1e1", borderRadius: 4 }} />
+      <div style={{ height: 18, width: "80%", background: "#eaeaea", borderRadius: 4 }} />
+      <div style={{ height: 18, width: "70%", background: "#ececec", borderRadius: 4 }} />
+      <div style={{ height: 200, width: "100%", background: "#f3f3f3", borderRadius: 8 }} />
+    </div>
+  )
+}

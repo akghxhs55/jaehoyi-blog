@@ -10,7 +10,7 @@ function getTopCategories(posts: TPost[], limit = 50): string[] {
   const map: Record<string, number> = {}
   for (const p of posts) {
     if (!p?.status?.includes("Public")) continue
-    const c = p.category
+    const c = Array.isArray(p.category) ? p.category[0] : p.category
     if (c) map[c] = (map[c] || 0) + 1
   }
   return Object.entries(map)
