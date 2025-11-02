@@ -47,3 +47,5 @@ public/feed.xml
 /.firebase
 
 /.idea
+
+tsconfig.tsbuildinfo
