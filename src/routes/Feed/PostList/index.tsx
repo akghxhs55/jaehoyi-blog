@@ -13,8 +13,8 @@ const PostList: React.FC<Props> = ({ posts, q }) => {
         {!posts.length && (
           <p className="text-gray-500 dark:text-gray-300">Nothing! 😺</p>
         )}
-        {posts.map((post) => (
-          <PostCard key={post.id} data={post} />
+        {posts.map((post, idx) => (
+          <PostCard key={post.id} data={post} priority={idx === 0} />
         ))}
       </div>
     </>

@@ -9,9 +9,10 @@ import styled from "@emotion/styled"
 
 type Props = {
   data: TPost
+  priority?: boolean
 }
 
-const PostCard: React.FC<Props> = ({ data }) => {
+const PostCard: React.FC<Props> = ({ data, priority }) => {
   const category = (data.category && data.category?.[0]) || undefined
 
   return (
@@ -30,6 +31,7 @@ const PostCard: React.FC<Props> = ({ data }) => {
               alt={data.title}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               css={{ objectFit: "cover" }}
+              priority={!!priority}
             />
           </div>
         )}

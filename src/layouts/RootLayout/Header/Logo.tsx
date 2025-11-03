@@ -7,7 +7,7 @@ const Logo = () => {
   return (
     <StyledWrapper href="/" aria-label={CONFIG.blog.title}>
       <span className="icon">
-        <Image src={CONFIG.profile.image} alt="Blog icon" width={24} height={24} />
+        <Image src={CONFIG.profile.image} alt="Blog icon" width={24} height={24} sizes="24px" />
       </span>
       <span className="title">{CONFIG.blog.title}</span>
     </StyledWrapper>

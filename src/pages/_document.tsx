@@ -46,6 +46,11 @@ class MyDocument extends Document {
           {/* Emotion insertion point to ensure styles are injected in the right order */}
           <meta name="emotion-insertion-point" content="" />
 
+          {/* Resource hints */}
+          <link rel="preconnect" href="https://www.notion.so" crossOrigin="anonymous" />
+          <link rel="preconnect" href="https://lh5.googleusercontent.com" crossOrigin="anonymous" />
+          <link rel="preconnect" href="https://s3.amazonaws.com" crossOrigin="anonymous" />
+
           <link rel="icon" href="/favicon.ico" />
           <link
             rel="apple-touch-icon"
