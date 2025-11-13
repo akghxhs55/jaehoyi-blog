@@ -5,7 +5,7 @@ import styled from "@emotion/styled"
 import { zIndexes } from "src/styles/zIndexes"
 import usePostQuery from "src/hooks/usePostQuery"
 import { useRouter } from "next/router"
-import React from "react"
+import React, { useRef } from "react"
 
 
 type Props = {
@@ -16,6 +16,8 @@ const Header: React.FC<Props> = ({ fullWidth }) => {
   const router = useRouter()
   const post = usePostQuery()
   const showTitle = Boolean(post?.title) && router.pathname === "/[slug]"
+
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const handleSearchSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault()
@@ -28,14 +30,20 @@ const Header: React.FC<Props> = ({ fullWidth }) => {
     }
   }
 
+  const handleSearchClick: React.MouseEventHandler<HTMLFormElement> = (e) => {
+    if (!(e.target instanceof HTMLInputElement)) {
+      searchInputRef.current?.focus()
+    }
+  }
+
   return (
     <StyledWrapper>
       <div data-full-width={fullWidth} className="container">
         <Logo />
         {showTitle && <div className="title" title={post!.title}>{post!.title}</div>}
         <div className="nav">
-          <form className="search" onSubmit={handleSearchSubmit}>
-            <input name="q" type="search" placeholder="Search..." aria-label="Search posts" />
+          <form className="search" role="search" onSubmit={handleSearchSubmit} onClick={handleSearchClick}>
+            <input ref={searchInputRef} name="q" type="search" placeholder="Search..." aria-label="Search posts" />
           </form>
           <ThemeToggle />
           <NavBar />

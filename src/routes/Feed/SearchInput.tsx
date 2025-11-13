@@ -1,5 +1,5 @@
 import styled from "@emotion/styled"
-import React, { InputHTMLAttributes } from "react"
+import React, { InputHTMLAttributes, useRef } from "react"
 import { Emoji } from "src/components/Emoji"
 
 interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onSubmit'> {
@@ -7,13 +7,23 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onSubmit'> 
 }
 
 const SearchInput: React.FC<Props> = ({ onSubmit, ...props }) => {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleClickContainer: React.MouseEventHandler<HTMLFormElement> = (e) => {
+    // If the click is not directly on the input, focus the input
+    if (!(e.target instanceof HTMLInputElement)) {
+      inputRef.current?.focus()
+    }
+  }
+
   return (
     <StyledWrapper>
       <div className="top">
         <Emoji>🔎</Emoji> Search
       </div>
-      <form onSubmit={onSubmit} className="mid">
+      <form onSubmit={onSubmit} onClick={handleClickContainer} className="mid" role="search">
         <input
+          ref={inputRef}
           type="text"
           placeholder="Search Keyword..."
           {...props}
@@ -44,5 +54,6 @@ const StyledWrapper = styled.div`
     outline-style: none;
     width: 100%;
     background-color: ${({ theme }) => theme.colors.gray4};
+    cursor: text;
   }
 `
