@@ -16,6 +16,8 @@ import { TPost } from "src/types"
 import { useRouter } from "next/router"
 import { filterPosts } from "./PostList/filterPosts"
 import { DEFAULT_CATEGORY } from "src/constants"
+import { CONFIG } from "site.config"
+import Pagination from "src/components/Pagination"
 
 const HEADER_HEIGHT = 73
 
@@ -26,7 +28,8 @@ type Props = {
 
 const Feed: React.FC<Props> = ({ posts, allTags }) => {
   const router = useRouter()
-  const [q, setQ] = useState((router.query.q as string) || "")
+  const q = (typeof router.query.q === 'string' ? router.query.q : '')
+  const [inputQ, setInputQ] = useState(q)
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -35,9 +38,11 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
     const tag = query.tag as string | undefined
     const category = query.category as string | undefined
 
-    if (q) query.q = q
-    else delete query.q
+    const nextQ = inputQ?.trim() || ''
+    if (nextQ) (query as any).q = nextQ
+    else delete (query as any).q
 
+    // Reset page when performing a new search
     delete (query as any).page
     // Route-based navigation: keep current context (tag/category) if present
     let pathname = '/'
@@ -47,16 +52,30 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
     router.push({ pathname, query })
   }
 
+  // Keep input value in sync with the current query param, but do not live-filter
   useEffect(() => {
-    setQ((router.query.q as string) || "")
-  }, [router.query.q])
+    setInputQ(q)
+  }, [q])
 
-  const displayedPosts = useMemo(() => {
+  const { paginatedPosts, totalPages, currentPage } = useMemo(() => {
     const tag = typeof router.query.tag === 'string' ? router.query.tag : undefined
     const category = typeof router.query.category === 'string' ? router.query.category : DEFAULT_CATEGORY
     const order = (typeof router.query.order === 'string' ? router.query.order : 'desc') as 'asc' | 'desc'
-    return filterPosts({ posts, q, tag, category, order })
-  }, [posts, q, router.query.tag, router.query.category, router.query.order])
+    const filtered = filterPosts({ posts, q, tag, category, order })
+
+    const postsPerPage = CONFIG.postsPerPage
+    const rawPage = router.query.page
+    const pageNum = Number(Array.isArray(rawPage) ? rawPage[0] : rawPage) || 1
+    const safePage = Math.max(1, Math.min(pageNum, Math.max(1, Math.ceil(filtered.length / postsPerPage))))
+    const start = (safePage - 1) * postsPerPage
+    const end = start + postsPerPage
+
+    return {
+      paginatedPosts: filtered.slice(start, end),
+      totalPages: Math.max(1, Math.ceil(filtered.length / postsPerPage)),
+      currentPage: safePage,
+    }
+  }, [posts, q, router.query.tag, router.query.category, router.query.order, router.query.page])
 
   return (
     <>
@@ -77,12 +96,13 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
         <div className="mid">
           <MobileProfileCard />
           <PinnedPosts q={q} />
-          <SearchInput value={q} onChange={(e) => setQ(e.target.value)} onSubmit={handleSearch} />
+          <SearchInput value={inputQ} onChange={(e) => setInputQ(e.target.value)} onSubmit={handleSearch} />
           <div className="tags">
             <TagList allTags={allTags} />
           </div>
           <FeedHeader />
-          <PostList posts={displayedPosts} q={q} />
+          <PostList posts={paginatedPosts} q={q} />
+          <Pagination currentPage={currentPage} totalPages={totalPages} />
           <div className="footer">
             <Footer />
           </div>

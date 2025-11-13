@@ -2,7 +2,6 @@ import { GetStaticPaths, GetStaticProps, NextPage } from "next"
 import { CONFIG } from "site.config"
 import { getPosts } from "src/apis"
 import Feed from "src/routes/Feed"
-import Pagination from "src/components/Pagination"
 import { TPost } from "src/types"
 import MetaConfig from "src/components/MetaConfig"
 
@@ -22,12 +21,11 @@ function getTopCategories(posts: TPost[], limit = 50): string[] {
 type Props = {
   posts: TPost[]
   currentPage: number
-  totalPages: number
   allTags: string[]
   category: string
 }
 
-const CategoryPagedPage: NextPage<Props> = ({ posts, currentPage, totalPages, allTags, category }) => {
+const CategoryPagedPage: NextPage<Props> = ({ posts, currentPage, allTags, category }) => {
   const meta = {
     title: `${CONFIG.blog.title}`,
     description: CONFIG.blog.description,
@@ -38,7 +36,6 @@ const CategoryPagedPage: NextPage<Props> = ({ posts, currentPage, totalPages, al
     <>
       <MetaConfig {...meta} />
       <Feed posts={posts} allTags={allTags} />
-      <Pagination currentPage={currentPage} totalPages={totalPages} />
     </>
   )
 }
@@ -72,22 +69,13 @@ export const getStaticProps: GetStaticProps = async (context) => {
     return { notFound: true, revalidate }
   }
 
-  const postsPerPage = CONFIG.postsPerPage
-  const totalPages = Math.max(1, Math.ceil(byCategory.length / postsPerPage))
-  if (page > totalPages) {
-    return { notFound: true, revalidate }
-  }
-
-  const start = (page - 1) * postsPerPage
-  const pagePosts = byCategory.slice(start, start + postsPerPage)
-
+  // Allow any page number >=1; Feed will handle slicing/pagination.
   const allTags = Array.from(new Set(posts.flatMap((p) => p.tags || [])))
 
   return {
     props: {
-      posts: pagePosts,
+      posts: byCategory,
       currentPage: page,
-      totalPages,
       allTags,
       category,
     },

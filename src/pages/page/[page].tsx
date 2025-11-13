@@ -2,18 +2,16 @@ import { GetStaticPaths, GetStaticProps, NextPage } from "next"
 import { CONFIG } from "site.config"
 import { getPosts } from "src/apis"
 import Feed from "src/routes/Feed"
-import Pagination from "src/components/Pagination"
 import { TPost } from "src/types"
 import MetaConfig from "src/components/MetaConfig"
 
 type Props = {
   posts: TPost[]
   currentPage: number
-  totalPages: number
   allTags: string[]
 }
 
-const PaginatedPage: NextPage<Props> = ({ posts, currentPage, totalPages, allTags }) => {
+const PaginatedPage: NextPage<Props> = ({ posts, currentPage, allTags }) => {
   const meta = {
     title: CONFIG.blog.title,
     description: CONFIG.blog.description,
@@ -24,7 +22,6 @@ const PaginatedPage: NextPage<Props> = ({ posts, currentPage, totalPages, allTag
     <>
       <MetaConfig {...meta} />
       <Feed posts={posts} allTags={allTags} />
-      <Pagination currentPage={currentPage} totalPages={totalPages} />
     </>
   )
 }
@@ -48,23 +45,12 @@ export const getStaticProps: GetStaticProps = async (context) => {
   // Only public posts, default desc
   const visiblePosts = posts.filter((post) => post.status?.includes("Public"))
 
-  const postsPerPage = CONFIG.postsPerPage
-  const totalPages = Math.max(1, Math.ceil(visiblePosts.length / postsPerPage))
-
-  if (page > totalPages) {
-    return { notFound: true, revalidate }
-  }
-
-  const startIndex = (page - 1) * postsPerPage
-  const paginatedPosts = visiblePosts.slice(startIndex, startIndex + postsPerPage)
-
   const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])))
 
   return {
     props: {
-      posts: paginatedPosts,
+      posts: visiblePosts,
       currentPage: page,
-      totalPages,
       allTags,
     },
     revalidate,
