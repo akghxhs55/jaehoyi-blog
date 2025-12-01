@@ -26,28 +26,77 @@ type Props = {
   allTags: string[]
 }
 
+const TAG_MODE_STORAGE_KEY = "feed_tag_mode"
+
 const Feed: React.FC<Props> = ({ posts, allTags }) => {
   const router = useRouter()
-  const q = (typeof router.query.q === 'string' ? router.query.q : '')
+  const q = typeof router.query.q === "string" ? router.query.q : ""
   const [inputQ, setInputQ] = useState(q)
+
+  const [tagMode, setTagMode] = useState<"and" | "or">(() => {
+    // 쿼리에 명시된 값이 있으면 우선 사용
+    const raw = typeof window === "undefined" ? undefined : router.query.tagMode
+    if (raw === "or" || raw === "and") return raw
+    if (Array.isArray(raw)) {
+      const v = raw[0]
+      if (v === "or" || v === "and") return v
+    }
+    return "and"
+  })
+
+  // 마운트 시 로컬 스토리지에서 모드 복원 (쿼리에 명시가 없을 때만)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const rawQuery = router.query.tagMode
+    if (rawQuery === "and" || rawQuery === "or") return
+
+    const stored = window.localStorage.getItem(TAG_MODE_STORAGE_KEY) as
+      | "and"
+      | "or"
+      | null
+    if (stored === "and" || stored === "or") {
+      setTagMode(stored)
+      const query = { ...router.query, tagMode: stored }
+      delete (query as any).page
+      router.replace({ pathname: router.pathname, query }, undefined, { shallow: true })
+    }
+  }, [router])
+
+  const toggleTagMode = () => {
+    const nextMode: "and" | "or" = tagMode === "and" ? "or" : "and"
+    setTagMode(nextMode)
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(TAG_MODE_STORAGE_KEY, nextMode)
+    }
+
+    const query = { ...router.query, tagMode: nextMode }
+    delete (query as any).page
+    router.push({ pathname: router.pathname, query })
+  }
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     const query = { ...router.query }
-    const tag = query.tag as string | undefined
+    const tag = query.tag
     const category = query.category as string | undefined
 
-    const nextQ = inputQ?.trim() || ''
+    const nextQ = inputQ?.trim() || ""
     if (nextQ) (query as any).q = nextQ
     else delete (query as any).q
 
     // Reset page when performing a new search
     delete (query as any).page
+
     // Route-based navigation: keep current context (tag/category) if present
-    let pathname = '/'
-    if (category) pathname = `/category/${encodeURIComponent(category)}`
-    else if (tag) pathname = `/tag/${encodeURIComponent(tag)}`
+    let pathname = "/"
+    if (category && typeof category === "string") {
+      pathname = `/category/${encodeURIComponent(category)}`
+    } else if (tag) {
+      pathname = "/"
+    }
 
     router.push({ pathname, query })
   }
@@ -58,15 +107,23 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
   }, [q])
 
   const { paginatedPosts, totalPages, currentPage } = useMemo(() => {
-    const tag = typeof router.query.tag === 'string' ? router.query.tag : undefined
-    const category = typeof router.query.category === 'string' ? router.query.category : DEFAULT_CATEGORY
-    const order = (typeof router.query.order === 'string' ? router.query.order : 'desc') as 'asc' | 'desc'
-    const filtered = filterPosts({ posts, q, tag, category, order })
+    const tag = router.query.tag
+    const category =
+      typeof router.query.category === "string"
+        ? router.query.category
+        : DEFAULT_CATEGORY
+    const order = (typeof router.query.order === "string" ? router.query.order : "desc") as
+      | "asc"
+      | "desc"
+    const filtered = filterPosts({ posts, q, tag, category, order, tagMode })
 
     const postsPerPage = CONFIG.postsPerPage
     const rawPage = router.query.page
     const pageNum = Number(Array.isArray(rawPage) ? rawPage[0] : rawPage) || 1
-    const safePage = Math.max(1, Math.min(pageNum, Math.max(1, Math.ceil(filtered.length / postsPerPage))))
+    const safePage = Math.max(
+      1,
+      Math.min(pageNum, Math.max(1, Math.ceil(filtered.length / postsPerPage))),
+    )
     const start = (safePage - 1) * postsPerPage
     const end = start + postsPerPage
 
@@ -75,7 +132,7 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
       totalPages: Math.max(1, Math.ceil(filtered.length / postsPerPage)),
       currentPage: safePage,
     }
-  }, [posts, q, router.query.tag, router.query.category, router.query.order, router.query.page])
+  }, [posts, q, router.query.tag, router.query.category, router.query.order, router.query.page, tagMode])
 
   return (
     <>
@@ -91,14 +148,18 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
             height: `calc(100vh - ${HEADER_HEIGHT}px)`,
           }}
         >
-          <TagList allTags={allTags} />
+          <TagList allTags={allTags} tagMode={tagMode} onToggleTagMode={toggleTagMode} />
         </div>
         <div className="mid">
           <MobileProfileCard />
           <PinnedPosts q={q} />
-          <SearchInput value={inputQ} onChange={(e) => setInputQ(e.target.value)} onSubmit={handleSearch} />
+          <SearchInput
+            value={inputQ}
+            onChange={(e) => setInputQ(e.target.value)}
+            onSubmit={handleSearch}
+          />
           <div className="tags">
-            <TagList allTags={allTags} />
+            <TagList allTags={allTags} tagMode={tagMode} onToggleTagMode={toggleTagMode} />
           </div>
           <FeedHeader />
           <PostList posts={paginatedPosts} q={q} />

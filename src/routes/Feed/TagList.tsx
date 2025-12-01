@@ -1,34 +1,82 @@
 import styled from "@emotion/styled"
 import { useRouter } from "next/router"
-import React from "react"
+import React, { useMemo } from "react"
 import { Emoji } from "src/components/Emoji"
+
+type TagMode = "and" | "or"
 
 type Props = {
   allTags: string[]
+  tagMode?: TagMode
+  onToggleTagMode?: () => void
 }
 
-const TagList: React.FC<Props> = ({ allTags }) => {
+const TagList: React.FC<Props> = ({ allTags, tagMode = "and", onToggleTagMode }) => {
   const router = useRouter()
-  const currentTag = (router.query.tag as string) || null
+  const rawTag = router.query.tag
+
+  const selectedTags = useMemo(() => {
+    if (!rawTag) return [] as string[]
+    if (Array.isArray(rawTag)) return rawTag as string[]
+    // support comma separated form just in case
+    return rawTag.split(",").filter(Boolean)
+  }, [rawTag])
+
+  const isSelected = (tag: string) => selectedTags.includes(tag)
+
+  const buildNextTags = (tag: string) => {
+    // toggle behaviour: add if not exists, remove if exists
+    if (isSelected(tag)) {
+      return selectedTags.filter((t) => t !== tag)
+    }
+    return [...selectedTags, tag]
+  }
 
   const handleClickTag = (value: string) => {
-    if (currentTag === value) {
-      router.push(`/`)
-    } else {
-      router.push(`/tag/${encodeURIComponent(value)}`)
+    const nextTags = buildNextTags(value)
+
+    // no tag selected -> go home without tag param
+    if (nextTags.length === 0) {
+      router.push({ pathname: "/", query: { ...router.query, tag: undefined } }, undefined, {
+        shallow: false,
+      })
+      return
     }
+
+    router.push(
+      {
+        pathname: "/",
+        query: { ...router.query, tag: nextTags },
+      },
+      undefined,
+      { shallow: false },
+    )
   }
 
   return (
-    <StyledWrapper>
+    <StyledWrapper data-has-selected={selectedTags.length > 0}
+    >
       <div className="top">
-        <Emoji>🏷️</Emoji> Tags
+        <div className="top-inner">
+          <span className="label">
+            <Emoji>🏷️</Emoji> Tags
+          </span>
+          {onToggleTagMode && (
+            <button
+              type="button"
+              className="tag-mode-toggle"
+              onClick={onToggleTagMode}
+            >
+              {tagMode === "and" ? "AND" : "OR"}
+            </button>
+          )}
+        </div>
       </div>
       <div className="list">
         {allTags.map((key) => (
           <a
             key={key}
-            data-active={key === currentTag}
+            data-active={isSelected(key)}
             onClick={() => handleClickTag(key)}
           >
             {key}
@@ -49,6 +97,43 @@ const StyledWrapper = styled.div`
 
     @media (min-width: 1024px) {
       display: block;
+    }
+
+    .top-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .tag-mode-toggle {
+      padding: 0.1rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid ${({ theme }) => theme.colors.gray5};
+      font-size: 0.7rem;
+      cursor: pointer;
+      background-color: ${({ theme }) => theme.colors.gray3};
+      color: ${({ theme }) => theme.colors.gray11};
+      transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+        opacity 0.15s ease;
+      opacity: 0.5;
+
+      /* 태그가 하나라도 선택된 경우 더 또렷하게 */
+      [data-has-selected="true"] & {
+        opacity: 1;
+      }
+
+      &:hover {
+        background-color: ${({ theme }) => theme.colors.gray5};
+        border-color: ${({ theme }) => theme.colors.gray6};
+        color: ${({ theme }) => theme.colors.gray12};
+      }
     }
   }
 
