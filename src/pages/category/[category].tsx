@@ -45,7 +45,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const cats = getTopCategories(posts, 50)
   return {
     paths: cats.map((c) => ({ params: { category: c } })),
-    fallback: 'blocking',
+    fallback: "blocking",
   }
 }
 
@@ -56,7 +56,9 @@ export const getStaticProps: GetStaticProps = async (context) => {
 
   const posts = await getPosts()
   const visible = posts.filter((p) => p.status?.includes("Public"))
-  const byCategory = visible.filter((p) => (p.category || "") === category)
+  const byCategory = visible.filter((p) =>
+    Array.isArray(p.category) ? p.category.includes(category) : p.category === category,
+  )
 
   if (byCategory.length === 0) {
     return { notFound: true, revalidate }
