@@ -215,6 +215,12 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
 export default NotionRenderer
 
 const StyledWrapper = styled.div`
+  /* Normalize Notion base size to follow our root rem scale */
+  .notion {
+    font-size: 1rem !important; /* 15px desktop, 14px mobile via html rem */
+    line-height: 1.72;
+  }
+
   /* // TODO: why render? */
   .notion-collection-page-properties {
     display: none !important;

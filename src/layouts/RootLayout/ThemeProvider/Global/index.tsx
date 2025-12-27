@@ -2,6 +2,7 @@ import { Global as _Global, css, useTheme } from "@emotion/react"
 
 import { ThemeProvider as _ThemeProvider } from "@emotion/react"
 import { pretendard } from "src/assets"
+import { respondMobile } from "src/styles/media"
 
 export const Global = () => {
   const theme = useTheme()
@@ -9,6 +10,11 @@ export const Global = () => {
   return (
     <_Global
       styles={css`
+        html {
+          font-size: 15px;
+          -webkit-text-size-adjust: 100%;
+        }
+
         body {
           margin: 0;
           padding: 0;
@@ -17,6 +23,7 @@ export const Global = () => {
           font-family: ${pretendard.style.fontFamily};
           font-weight: ${pretendard.style.fontWeight};
           font-style: ${pretendard.style.fontStyle};
+          line-height: 1.65;
         }
 
         * {
@@ -72,6 +79,12 @@ export const Global = () => {
           border: none;
           margin: 0;
           border-top: 1px solid ${theme.colors.gray6};
+        }
+
+        ${respondMobile} {
+          html {
+            font-size: 14px;
+          }
         }
       `}
     />
