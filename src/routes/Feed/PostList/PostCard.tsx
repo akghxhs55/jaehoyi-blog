@@ -6,14 +6,32 @@ import { TPost } from "../../../types"
 import Image from "next/image"
 import Category from "../../../components/Category"
 import styled from "@emotion/styled"
+import { useQuery } from "@tanstack/react-query"
+
+import { AiOutlineHeart } from "react-icons/ai"
 
 type Props = {
   data: TPost
   priority?: boolean
+  likeCount?: number
 }
 
-const PostCard: React.FC<Props> = ({ data, priority }) => {
+const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
   const category = (data.category && data.category?.[0]) || undefined
+
+  // Fallback: if likeCount not provided, fetch per-card
+  const { data: fetchedLikes } = useQuery<number>({
+    queryKey: ["likes", data.slug],
+    enabled: typeof window !== "undefined" && typeof likeCount !== "number",
+    queryFn: async () => {
+      const res = await fetch(`/api/likes?slug=${data.slug}`, { cache: "no-store", credentials: "include" })
+      if (!res.ok) throw new Error("Failed to fetch likes")
+      const json = await res.json()
+      return json.likes as number
+    },
+  })
+
+  const effectiveLikeCount = typeof likeCount === "number" ? likeCount : fetchedLikes
 
   return (
     <StyledWrapper href={`/${data.slug}`}>
@@ -46,6 +64,12 @@ const PostCard: React.FC<Props> = ({ data, priority }) => {
                 CONFIG.lang
               )}
             </div>
+            {typeof effectiveLikeCount === "number" && (
+              <div className="likes" aria-label="likes">
+                <AiOutlineHeart size={14} />
+                <span>{effectiveLikeCount}</span>
+              </div>
+            )}
           </div>
           <div className="summary">
             <p>{data.summary}</p>
@@ -144,6 +168,18 @@ const StyledWrapper = styled(Link)`
           color: ${({ theme }) => theme.colors.gray10};
           @media (min-width: 768px) {
             margin-left: 0;
+          }
+        }
+        .likes {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.875rem;
+          line-height: 1.25rem;
+          color: ${({ theme }) => theme.colors.gray10};
+          svg {
+            vertical-align: middle;
+            transform: translateY(-1px);
           }
         }
       }
