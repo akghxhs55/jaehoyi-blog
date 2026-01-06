@@ -1,19 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { getCookie, setCookie } from "cookies-next"
 
+// Minimal KV client typing used by this file
+// (only the methods actually used below)
+type KvClient = {
+  get<T = unknown>(key: string): Promise<T | null>
+  set<T = unknown>(key: string, value: T, opts?: { ex?: number }): Promise<unknown>
+  incr(key: string): Promise<number>
+  decr(key: string): Promise<number>
+  sadd(key: string, ...members: string[]): Promise<number>
+  srem(key: string, ...members: string[]): Promise<number>
+  sismember(key: string, member: string): Promise<number | boolean>
+}
+
 // Try to access Vercel KV if configured; otherwise fall back to in-memory store for local dev
 let kvAvailable: boolean | undefined
-let kv: any | null = null
+let kv: KvClient | null = null
 
 async function ensureKv() {
   if (kvAvailable !== undefined) return kv
   try {
     const hasEnv = Boolean(
       process.env.KV_URL ||
-        process.env.KV_REST_API_URL ||
-        process.env.UPSTASH_REDIS_REST_URL ||
-        process.env.KV_REST_API_TOKEN ||
-        process.env.UPSTASH_REDIS_REST_TOKEN
+      process.env.KV_REST_API_URL ||
+      process.env.UPSTASH_REDIS_REST_URL ||
+      process.env.KV_REST_API_TOKEN ||
+      process.env.UPSTASH_REDIS_REST_TOKEN
     )
     if (!hasEnv) {
       kvAvailable = false
@@ -21,7 +33,7 @@ async function ensureKv() {
       return kv
     }
     const mod = await import("@vercel/kv")
-    kv = (mod as any).kv
+    kv = (mod as any).kv as KvClient
     kvAvailable = !!kv
   } catch {
     kvAvailable = false

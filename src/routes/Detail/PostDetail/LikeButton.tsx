@@ -60,7 +60,7 @@ const LikeButton = () => {
     },
   })
 
-  const disabled = !slug || mutation.isPending || mutation.isLoading
+  const disabled = !slug || mutation.isPending
 
   return (
     <Wrapper>
