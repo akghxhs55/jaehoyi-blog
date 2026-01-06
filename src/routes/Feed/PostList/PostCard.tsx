@@ -23,8 +23,11 @@ const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
   const { data: fetchedLikes } = useQuery<number>({
     queryKey: ["likes", data.slug],
     enabled: typeof window !== "undefined" && typeof likeCount !== "number",
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 0,
     queryFn: async () => {
-      const res = await fetch(`/api/likes?slug=${data.slug}`, { cache: "no-store", credentials: "include" })
+      const res = await fetch(`/api/likes?slug=${data.slug}&lite=1`, { cache: "no-store" })
       if (!res.ok) throw new Error("Failed to fetch likes")
       const json = await res.json()
       return json.likes as number

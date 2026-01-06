@@ -14,9 +14,12 @@ const PostList: React.FC<Props> = ({ posts, q }) => {
   const { data: counts } = useQuery<Record<string, number>>({
     queryKey: ["likes", "batch", slugs],
     enabled: typeof window !== "undefined" && slugs.length > 0,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 0,
     queryFn: async () => {
       const params = new URLSearchParams({ slugs: slugs.join(",") })
-      const res = await fetch(`/api/likes?${params.toString()}`, { cache: "no-store", credentials: "include" })
+      const res = await fetch(`/api/likes?${params.toString()}`, { cache: "no-store" })
       if (!res.ok) throw new Error("Failed to fetch likes counts")
       const json = await res.json()
       return (json.counts || {}) as Record<string, number>

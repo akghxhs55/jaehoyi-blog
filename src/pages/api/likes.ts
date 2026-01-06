@@ -11,6 +11,7 @@ type KvClient = {
   sadd(key: string, ...members: string[]): Promise<number>
   srem(key: string, ...members: string[]): Promise<number>
   sismember(key: string, member: string): Promise<number | boolean>
+  mget?: (...keys: string[]) => Promise<any[]>
 }
 
 // Try to access Vercel KV if configured; otherwise fall back to in-memory store for local dev
@@ -81,6 +82,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const slugs = normalizeSlugs(req.query.slug || (req.query.slugs as any))
     if (slugs.length === 0) return res.status(400).json({ error: "slug is required" })
 
+    const lite = String(req.query.lite || "").toLowerCase()
+    const isLite = lite === "1" || lite === "true"
+
     await ensureKv()
 
     // Single slug → { slug, likes, liked }
@@ -93,6 +97,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         else likes = memoryCounts.get(keyCount) || 0
       } catch {
         likes = 0
+      }
+
+      if (isLite) {
+        // Lite mode: do not touch user membership (saves a KV op)
+        return res.status(200).json({ slug, likes, liked: false })
       }
 
       // Determine if current user already liked
@@ -127,61 +136,81 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "POST") {
-    const { slug } = (req.body || {}) as { slug?: string }
+    const { slug, nextLiked, clientDecides } = (req.body || {}) as { slug?: string; nextLiked?: boolean; clientDecides?: boolean }
     if (!slug || typeof slug !== "string")
       return res.status(400).json({ error: "slug is required" })
 
     await ensureKv()
 
-    // In production, require KV to be available to guarantee single-like correctness.
+    // In production, require KV to be available to guarantee persistence
     if (process.env.NODE_ENV === "production" && !kv) {
       return res.status(503).json({ error: "Service unavailable: KV not configured" })
     }
 
-    const uid = getUid(req, res)
-
-    const usersKey = `likes:users:${slug}`
     const countKey = `likes:count:${slug}`
+    const usersKey = `likes:users:${slug}`
 
     let likes = 0
     let liked = false
+
+    const useLiteToggle = !!clientDecides && typeof nextLiked === "boolean"
+
     try {
       if (kv) {
-        const isMember = await kv.sismember(usersKey, uid)
-        if (isMember) {
-          // Unlike: remove and decrement (floor at 0)
-          await kv.srem(usersKey, uid)
-          likes = await kv.decr(countKey)
-          if (likes < 0) {
-            await kv.set(countKey, 0)
-            likes = 0
+        if (useLiteToggle) {
+          // Client decides desired state → single counter op, no set membership ops
+          if (nextLiked) {
+            likes = await kv.incr(countKey)
+          } else {
+            likes = await kv.decr(countKey)
+            if (likes < 0) {
+              await kv.set(countKey, 0)
+              likes = 0
+            }
           }
-          liked = false
+          liked = !!nextLiked
         } else {
-          // Like: add and increment
-          await kv.sadd(usersKey, uid)
-          likes = await kv.incr(countKey)
-          liked = true
+          // Full server-side membership check (legacy mode)
+          const uid = getUid(req, res)
+          const isMember = await kv.sismember(usersKey, uid)
+          if (isMember) {
+            await kv.srem(usersKey, uid)
+            likes = await kv.decr(countKey)
+            if (likes < 0) {
+              await kv.set(countKey, 0)
+              likes = 0
+            }
+            liked = false
+          } else {
+            await kv.sadd(usersKey, uid)
+            likes = await kv.incr(countKey)
+            liked = true
+          }
         }
       } else {
         // In-memory fallback for local dev
-        const set = memoryLiked.get(slug) || new Set<string>()
         const keyCount = countKey
         const prev = memoryCounts.get(keyCount) || 0
-        if (set.has(uid)) {
-          // Unlike
-          set.delete(uid)
-          memoryLiked.set(slug, set)
-          likes = Math.max(0, prev - 1)
+        if (useLiteToggle) {
+          likes = Math.max(0, nextLiked ? prev + 1 : prev - 1)
           memoryCounts.set(keyCount, likes)
-          liked = false
+          liked = !!nextLiked
         } else {
-          // Like
-          set.add(uid)
-          memoryLiked.set(slug, set)
-          likes = prev + 1
-          memoryCounts.set(keyCount, likes)
-          liked = true
+          const uid = getUid(req, res)
+          const set = memoryLiked.get(slug) || new Set<string>()
+          if (set.has(uid)) {
+            set.delete(uid)
+            memoryLiked.set(slug, set)
+            likes = Math.max(0, prev - 1)
+            memoryCounts.set(keyCount, likes)
+            liked = false
+          } else {
+            set.add(uid)
+            memoryLiked.set(slug, set)
+            likes = prev + 1
+            memoryCounts.set(keyCount, likes)
+            liked = true
+          }
         }
       }
     } catch (e) {
