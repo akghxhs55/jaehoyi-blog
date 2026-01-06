@@ -60,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await ensureKv()
 
     const key = `comments:${slug}`
-    let rawComments: string[] = []
+    let rawComments: unknown[] = []
 
     try {
       if (kv) {
@@ -75,9 +75,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Parse JSON
     const comments: CommentData[] = rawComments
-      .map((str) => {
+      .map((item) => {
         try {
-          return JSON.parse(str)
+          if (typeof item === "object" && item !== null) return item as CommentData
+          if (typeof item === "string") return JSON.parse(item)
+          return null
         } catch {
           return null
         }
