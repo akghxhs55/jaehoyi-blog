@@ -9,6 +9,7 @@ const UtterancesComponent = dynamic(
   },
   { ssr: false }
 )
+const SimpleComment = dynamic(() => import("./SimpleComment"), { ssr: false })
 
 type Props = {
   data: TPost
@@ -19,8 +20,6 @@ const CommentBox: React.FC<Props> = ({ data }) => {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    if (!CONFIG.utterances.enable) return
-
     // If IntersectionObserver isn't supported, mount immediately on client
     if (typeof IntersectionObserver === "undefined") {
       setIsVisible(true)
@@ -51,11 +50,13 @@ const CommentBox: React.FC<Props> = ({ data }) => {
 
   return (
     <div ref={containerRef}>
-      {CONFIG.utterances.enable && isVisible ? (
-        <UtterancesComponent issueTerm={data.id} />
-      ) : (
-        // simple placeholder to reserve space
-        <div aria-hidden="true" style={{ height: 52 }} />
+      {isVisible && (
+        <>
+          <SimpleComment slug={data.id} />
+          {CONFIG.utterances.enable && (
+            <UtterancesComponent issueTerm={data.id} />
+          )}
+        </>
       )}
     </div>
   )
