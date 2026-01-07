@@ -41,6 +41,19 @@ async function ensureKv() {
 // Local in-memory fallback (dev only, non-persistent)
 const memoryComments = new Map<string, string[]>()
 
+// Helper to strip HTML tags for sanitation
+// Note: Simple regex is not foolproof against all XSS but basic enough for plain text requirement
+// Ideally use a library like 'dompurify' (with jsdom on server) or 'xss'
+import createDOMPurify from "dompurify"
+import { JSDOM } from "jsdom"
+
+const window = new JSDOM("").window
+const DOMPurify = createDOMPurify(window as any)
+
+function sanitizeText(text: string): string {
+  return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] }) // No tags allowed, pure text
+}
+
 export type CommentData = {
   id: string
   date: number
@@ -80,13 +93,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .map((item) => {
         try {
           if (typeof item === "object" && item !== null) return item as CommentData
-          if (typeof item === "string") return JSON.parse(item)
+          if (typeof item === "string") {
+             const parsed = JSON.parse(item)
+             // Sanitize on read as well for extra safety for existing data
+             if (parsed && typeof parsed === 'object') {
+               return {
+                 ...parsed,
+                 author: sanitizeText(parsed.author || ''),
+                 // Content is not stripped here because we might want to allow some markdown or formatting later,
+                 // but for now it's safer to rely on frontend escaping or sanitization if rendering HTML.
+                 // However, since we store it as text and render as text in React, it's generally safe.
+                 // If we were using dangerouslySetInnerHTML, we would need to sanitize content too.
+               } as CommentData
+             }
+          }
           return null
         } catch {
           return null
         }
       })
-      .filter(Boolean)
+      .filter((item): item is CommentData => item !== null)
       .sort((a, b) => b.date - a.date) // Newest first
 
     return res.status(200).json(comments)
@@ -97,8 +123,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === "POST") {
     const { slug, author, content } = req.body
-    if (!slug || typeof slug !== "string" || !content) {
+    if (!slug || typeof slug !== "string" || !content || typeof content !== "string") {
       return res.status(400).json({ error: "Missing required fields" })
+    }
+
+    if (slug.length > 256) {
+      return res.status(400).json({ error: "Slug is too long" })
     }
 
     await ensureKv()
@@ -122,11 +152,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    const safeAuthor = sanitizeText((author || "Anonymous").toString()).slice(0, 50)
+    const safeContent = (content || "").toString().slice(0, 1000)
+
     const newComment: CommentData = {
       id: Math.random().toString(36).slice(2),
       date: Date.now(),
-      author: (author || "Anonymous").slice(0, 50), // Limit length
-      content: (content || "").slice(0, 1000), // Limit length
+      author: safeAuthor,
+      content: safeContent,
     }
 
     const key = `comments:${slug}`
@@ -149,4 +182,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(405).json({ error: "Method Not Allowed" })
 }
-
