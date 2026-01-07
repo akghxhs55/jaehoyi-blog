@@ -6,7 +6,7 @@ type KvClient = {
   rpush(key: string, ...elements: unknown[]): Promise<number>
   del(key: string): Promise<number>
   get<T = unknown>(key: string): Promise<T | null>
-  set<T = unknown>(key: string, value: T, opts?: { ex?: number }): Promise<unknown>
+  set<T = unknown>(key: string, value: T, opts?: { ex?: number; nx?: boolean }): Promise<unknown>
 }
 
 // Try to access Vercel KV if configured; otherwise fall back to in-memory store for local dev
@@ -49,9 +49,11 @@ export type CommentData = {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  res.setHeader("Cache-Control", "no-store")
-
   if (req.method === "GET") {
+    // Cache for 5 minutes, then serve stale for 10 minutes while updating
+    // This significantly reduces KV reads during high traffic
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600")
+
     const { slug } = req.query
     if (!slug || typeof slug !== "string") {
       return res.status(400).json({ error: "slug is required" })
@@ -90,6 +92,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json(comments)
   }
 
+    // Ensure no caching for mutations
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+
   if (req.method === "POST") {
     const { slug, author, content } = req.body
     if (!slug || typeof slug !== "string" || !content) {
@@ -105,12 +110,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (kv) {
       try {
-        const isRateLimited = await kv.get(rateLimitKey)
-        if (isRateLimited) {
+        // SET key val EX 60 NX
+        // Returns 'OK' (or true/1) if set, null/0 if already exists (rate limited)
+        // This avoids a separate GET (Read) operation
+        const success = await kv.set(rateLimitKey, "1", { ex: 60, nx: true })
+        if (!success) {
           return res.status(429).json({ error: "Too many requests. Please try again later." })
         }
       } catch (e) {
-        // Ignore rate limit errors to allow posting if check fails
+        // Ignore errors
       }
     }
 
@@ -127,8 +135,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       if (kv) {
         await kv.rpush(key, val)
-        // Set rate limit key expiring in 60 seconds
-        await kv.set(rateLimitKey, "1", { ex: 60 })
       } else {
         const list = memoryComments.get(key) || []
         list.push(val)
