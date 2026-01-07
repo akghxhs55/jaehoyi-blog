@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import styled from "@emotion/styled"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { formatDate } from "src/libs/utils"
@@ -18,8 +18,24 @@ const SimpleComment: React.FC<Props> = ({ slug }) => {
   const queryClient = useQueryClient()
   const [author, setAuthor] = useState("")
   const [content, setContent] = useState("")
+  const [localComments, setLocalComments] = useState<CommentData[]>([])
 
-  const { data: comments, isLoading } = useQuery<CommentData[]>({
+  // Load locally saved comments on mount (client-side only trick)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`local_comments_${slug}`)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        // Filter out comments older than 5 minutes (cache TTL) to avoid eternal duplicates
+        const recent = parsed.filter((c: CommentData) => Date.now() - c.date < 1000 * 60 * 5)
+        setLocalComments(recent)
+      }
+    } catch {
+      // ignore
+    }
+  }, [slug])
+
+  const { data: serverComments, isLoading } = useQuery<CommentData[]>({
     queryKey: ["comments", slug],
     queryFn: async () => {
       const res = await fetch(`/api/comments?slug=${slug}`)
@@ -41,13 +57,31 @@ const SimpleComment: React.FC<Props> = ({ slug }) => {
       return res.json()
     },
     onSuccess: (newComment) => {
+      // 1. Update React Query cache immediately for current session
       queryClient.setQueryData<CommentData[]>(["comments", slug], (old) => {
         return [newComment, ...(old || [])]
       })
+
+      // 2. Save to localStorage for 'fake' persistence across refreshes
+      const updatedLocal = [newComment, ...localComments]
+      setLocalComments(updatedLocal)
+      localStorage.setItem(`local_comments_${slug}`, JSON.stringify(updatedLocal))
+
       setContent("")
       setAuthor("")
     },
   })
+
+  // Merge server comments and local pending comments
+  // Removing duplicates based on ID
+  const displayedComments = React.useMemo(() => {
+    const combined = [...localComments, ...(serverComments || [])]
+    const unique = new Map()
+    combined.forEach((c) => {
+      if (!unique.has(c.id)) unique.set(c.id, c)
+    })
+    return Array.from(unique.values()).sort((a, b) => b.date - a.date)
+  }, [serverComments, localComments])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,7 +91,7 @@ const SimpleComment: React.FC<Props> = ({ slug }) => {
 
   return (
     <StyledWrapper>
-      <div className="comment-header">Comments ({comments?.length || 0})</div>
+      <div className="comment-header">Comments ({displayedComments.length || 0})</div>
 
       <form onSubmit={handleSubmit} className="comment-form">
         <input
@@ -81,7 +115,7 @@ const SimpleComment: React.FC<Props> = ({ slug }) => {
 
       <div className="comment-list">
         {isLoading && <div className="loading">Loading comments...</div>}
-        {comments?.map((c) => (
+        {displayedComments.map((c) => (
           <div key={c.id} className="comment-item">
             <div className="meta">
               <span className="author">{c.author}</span>
@@ -185,4 +219,3 @@ const StyledWrapper = styled.div`
     }
   }
 `
-
