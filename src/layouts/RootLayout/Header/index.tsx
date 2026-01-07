@@ -62,7 +62,7 @@ const StyledWrapper = styled.div`
   backdrop-filter: saturate(180%) blur(8px);
   background-color: ${({ theme }) => theme.scheme === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(22,22,22,0.5)'};
   border-bottom: 1px solid ${({ theme }) => theme.colors.gray6};
-
+  
   .container {
     display: grid;
     grid-template-columns: auto 1fr auto;
@@ -72,7 +72,6 @@ const StyledWrapper = styled.div`
     align-items: center;
     width: 100%;
     max-width: 1120px;
-    height: 3rem;
     margin: 0 auto;
     &[data-full-width="true"] {
       @media (min-width: 768px) {

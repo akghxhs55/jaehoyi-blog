@@ -27,6 +27,7 @@ const StyledWrapper = styled.div`
       display: block;
       margin-left: 1rem;
       color: ${({ theme }) => theme.colors.gray11};
+      line-height: 1;
     }
   }
 `
