@@ -43,15 +43,21 @@ const memoryComments = new Map<string, string[]>()
 
 // Helper to strip HTML tags for sanitation
 // Note: Simple regex is not foolproof against all XSS but basic enough for plain text requirement
-// Ideally use a library like 'dompurify' (with jsdom on server) or 'xss'
-import createDOMPurify from "dompurify"
-import { JSDOM } from "jsdom"
-
-const window = new JSDOM("").window
-const DOMPurify = createDOMPurify(window as any)
+// ideally use a library like 'dompurify' (with jsdom on server) or 'xss'
+// 'jsdom' can be heavy and problematic in serverless environments (e.g. Vercel), causing 500 errors.
+// So we switched to 'xss' which is lighter and Node.js friendly.
+import xss from "xss"
 
 function sanitizeText(text: string): string {
-  return DOMPurify.sanitize(text, { ALLOWED_TAGS: [] }) // No tags allowed, pure text
+  // Use xss library to strip all tags.
+  // The 'whiteList: {}' option means no tags are allowed.
+  // stripIgnoreTag: true removes tags not in whitelist.
+  // stripIgnoreTagBody: ['script'] removes script content.
+  return xss(text, {
+    whiteList: {},
+    stripIgnoreTag: true,
+    stripIgnoreTagBody: ["script"],
+  })
 }
 
 export type CommentData = {
