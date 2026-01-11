@@ -47,9 +47,13 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
   // 마운트 시 로컬 스토리지에서 모드 복원 (쿼리에 명시가 없을 때만)
   useEffect(() => {
     if (typeof window === "undefined") return
+    if (!router.isReady) return
 
     const rawQuery = router.query.tagMode
-    if (rawQuery === "and" || rawQuery === "or") return
+    if (rawQuery === "and" || rawQuery === "or") {
+      setTagMode(rawQuery)
+      return
+    }
 
     const stored = window.localStorage.getItem(TAG_MODE_STORAGE_KEY) as
       | "and"
