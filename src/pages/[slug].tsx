@@ -10,7 +10,6 @@ import { QueryClient, dehydrate } from "@tanstack/react-query"
 import { queryKey } from "src/constants/queryKey"
 import usePostQuery from "src/hooks/usePostQuery"
 import { FilterPostsOptions } from "src/libs/utils/notion/filterPosts"
-import { useRouter } from "next/router"
 
 const filter: FilterPostsOptions = {
   acceptStatus: ["Public", "PublicOnDetail"],
@@ -23,7 +22,7 @@ export const getStaticPaths = async () => {
 
   return {
     paths: filteredPost.map((row) => `/${row.slug}`),
-    fallback: true,
+    fallback: 'blocking',
   }
 }
 
@@ -76,14 +75,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
 }
 
 const DetailPage: NextPageWithLayout = () => {
-  const router = useRouter()
   const post = usePostQuery()
-
-  // Avoid gating on router.isReady to keep SSR/CSR trees aligned.
-  // For fallback paths, render the detail skeleton (Detail renders a skeleton when data is absent).
-  if (router.isFallback) {
-    return <Detail />
-  }
 
   if (!post) return <CustomError />
 

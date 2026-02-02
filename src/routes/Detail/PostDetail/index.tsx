@@ -5,6 +5,7 @@ import CommentBox from "./CommentBox"
 import Category from "src/components/Category"
 import styled from "@emotion/styled"
 import NotionRenderer from "../components/NotionRenderer"
+import TableOfContents from "../components/TableOfContents"
 import usePostQuery from "src/hooks/usePostQuery"
 import LikeButton from "./LikeButton"
 
@@ -39,6 +40,7 @@ const PostDetail: React.FC<Props> = () => {
           </>
         )}
       </article>
+      <TableOfContents recordMap={data.recordMap} />
     </StyledWrapper>
   )
 }
