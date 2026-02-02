@@ -81,6 +81,15 @@ export const Global = () => {
           border-top: 1px solid ${theme.colors.gray6};
         }
 
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible {
+          outline: 2px solid ${theme.colors.indigo10};
+          outline-offset: 2px;
+          border-radius: 2px;
+        }
+
         ${respondMobile} {
           html {
             font-size: 14px;
