@@ -1,5 +1,7 @@
-// Lightweight wrapper around @vercel/kv that fails gracefully when KV is not configured
-// Avoids import errors in local/dev environments without KV
+// Lightweight wrapper around @upstash/redis that fails gracefully when Redis is not configured
+// Avoids import errors in local/dev environments without Redis
+
+import { Redis } from "@upstash/redis"
 
 export type KvLike = {
   get<T = unknown>(key: string): Promise<T | null>
@@ -11,9 +13,6 @@ let cachedClient: KvLike | null | undefined
 async function getClient(): Promise<KvLike | null> {
   if (cachedClient !== undefined) return cachedClient
   try {
-    // Dynamic import to prevent static resolution when not installed/configured
-    const mod = await import("@vercel/kv")
-    const client: KvLike | null = (mod as any)?.kv ?? null
     // Basic env presence check — if missing, treat as unavailable
     const hasEnv = !!(
       process.env.KV_URL ||
@@ -22,7 +21,19 @@ async function getClient(): Promise<KvLike | null> {
       process.env.KV_REST_API_TOKEN ||
       process.env.UPSTASH_REDIS_REST_TOKEN
     )
-    cachedClient = hasEnv ? client : null
+
+    if (!hasEnv) {
+      cachedClient = null
+      return null
+    }
+
+    // Initialize Upstash Redis client
+    const client = new Redis({
+      url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || "",
+      token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "",
+    })
+
+    cachedClient = client
   } catch {
     cachedClient = null
   }

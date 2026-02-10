@@ -33,8 +33,11 @@ async function ensureKv() {
       kv = null
       return kv
     }
-    const mod = await import("@vercel/kv")
-    kv = (mod as any).kv as KvClient
+    const { Redis } = await import("@upstash/redis")
+    kv = new Redis({
+      url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || "",
+      token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "",
+    }) as KvClient
     kvAvailable = !!kv
   } catch {
     kvAvailable = false
