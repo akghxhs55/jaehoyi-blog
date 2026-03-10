@@ -9,19 +9,12 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onSubmit'> 
 const SearchInput: React.FC<Props> = ({ onSubmit, ...props }) => {
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleClickContainer: React.MouseEventHandler<HTMLFormElement> = (e) => {
-    // If the click is not directly on the input, focus the input
-    if (!(e.target instanceof HTMLInputElement)) {
-      inputRef.current?.focus()
-    }
-  }
-
   return (
     <StyledWrapper>
       <div className="top">
         <Emoji>🔎</Emoji> Search
       </div>
-      <form onSubmit={onSubmit} onClick={handleClickContainer} className="mid" role="search">
+      <form onSubmit={onSubmit} className="mid" role="search">
         <input
           ref={inputRef}
           type="text"

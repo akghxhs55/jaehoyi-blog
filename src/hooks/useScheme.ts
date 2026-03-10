@@ -21,12 +21,11 @@ const useScheme = (): [SchemeType, SetScheme] => {
 
   const setScheme = (scheme: SchemeType) => {
     setCookie("scheme", scheme)
-
     queryClient.setQueryData(queryKey.scheme(), scheme)
   }
 
   useEffect(() => {
-    if (!window) return
+    if (typeof window === "undefined") return
 
     const cachedScheme = getCookie("scheme") as SchemeType
     const defaultScheme = followsSystemTheme
@@ -34,10 +33,14 @@ const useScheme = (): [SchemeType, SetScheme] => {
         ? "dark"
         : "light"
       : data
-    setScheme(cachedScheme || defaultScheme)
-  }, [])
+    
+    const finalScheme = cachedScheme || defaultScheme
+    if (data !== finalScheme) {
+      setScheme(finalScheme)
+    }
+  }, [data, followsSystemTheme])
 
-  return [data, setScheme]
+  return [data as SchemeType, setScheme]
 }
 
 export default useScheme

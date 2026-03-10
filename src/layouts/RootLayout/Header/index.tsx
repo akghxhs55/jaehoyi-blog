@@ -30,19 +30,13 @@ const Header: React.FC<Props> = ({ fullWidth }) => {
     }
   }
 
-  const handleSearchClick: React.MouseEventHandler<HTMLFormElement> = (e) => {
-    if (!(e.target instanceof HTMLInputElement)) {
-      searchInputRef.current?.focus()
-    }
-  }
-
   return (
     <StyledWrapper>
       <div data-full-width={fullWidth} className="container">
         <Logo />
         {showTitle && <div className="title" title={post!.title}>{post!.title}</div>}
         <div className="nav">
-          <form className="search" role="search" onSubmit={handleSearchSubmit} onClick={handleSearchClick}>
+          <form className="search" role="search" onSubmit={handleSearchSubmit}>
             <input ref={searchInputRef} name="q" type="search" placeholder="Search..." aria-label="Search posts" />
           </form>
           <ThemeToggle />

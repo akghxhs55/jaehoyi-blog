@@ -53,7 +53,7 @@ const StyledWrapper = styled.div`
   padding-top: 3rem;
   padding-bottom: 3rem;
   border-radius: 1.5rem;
-  max-width: 56rem;
+  max-width: 62rem;
   background-color: ${({ theme }) =>
     theme.scheme === "light" ? "white" : theme.colors.gray4};
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
@@ -61,6 +61,6 @@ const StyledWrapper = styled.div`
   margin: 0 auto;
   > article {
     margin: 0 auto;
-    max-width: 42rem;
+    max-width: 50rem;
   }
 `

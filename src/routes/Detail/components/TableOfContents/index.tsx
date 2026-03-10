@@ -85,7 +85,7 @@ export default TableOfContents
 const StyledWrapper = styled.aside`
   position: fixed;
   top: calc(56px + 5rem);
-  left: calc(50% + 29rem + 1rem);
+  left: calc(50% + 32rem + 1rem);
   width: 200px;
   max-height: calc(100vh - 56px - 6rem);
   overflow-y: auto;
