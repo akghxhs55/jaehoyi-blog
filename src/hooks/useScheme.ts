@@ -15,7 +15,7 @@ const useScheme = (): [SchemeType, SetScheme] => {
     queryKey: queryKey.scheme(),
     enabled: false,
     initialData: followsSystemTheme
-      ? "dark"
+      ? "light"
       : (CONFIG.blog.scheme as SchemeType),
   })
 
