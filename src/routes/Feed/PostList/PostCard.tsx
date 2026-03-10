@@ -20,7 +20,7 @@ const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
   const category = (data.category && data.category?.[0]) || undefined
 
   // Fallback: if likeCount not provided, fetch per-card
-  const { data: fetchedLikes } = useQuery<number>({
+  const { data: likeData } = useQuery<{ likes: number; liked: boolean }>({
     queryKey: ["likes", data.slug],
     enabled: typeof window !== "undefined" && typeof likeCount !== "number",
     staleTime: 10 * 60 * 1000, // 10 minutes
@@ -30,11 +30,11 @@ const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
       const res = await fetch(`/api/likes?slug=${data.slug}&lite=1`, { cache: "no-store" })
       if (!res.ok) throw new Error("Failed to fetch likes")
       const json = await res.json()
-      return json.likes as number
+      return { likes: json.likes as number, liked: false }
     },
   })
 
-  const effectiveLikeCount = typeof likeCount === "number" ? likeCount : fetchedLikes
+  const effectiveLikeCount = typeof likeCount === "number" ? likeCount : likeData?.likes
 
   return (
     <StyledWrapper href={`/${data.slug}`}>
