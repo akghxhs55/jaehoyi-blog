@@ -16,10 +16,17 @@ const CategorySelect: React.FC<Props> = () => {
   const currentCategory = `${router.query.category || ``}` || DEFAULT_CATEGORY
 
   const handleOptionClick = (category: string) => {
+    const query = { ...router.query }
+    delete query.page
+    delete query.category
+
     if (category === DEFAULT_CATEGORY) {
-      router.push("/")
+      router.push({ pathname: "/", query })
     } else {
-      router.push(`/category/${encodeURIComponent(category)}`)
+      router.push({
+        pathname: `/category/${encodeURIComponent(category)}`,
+        query,
+      })
     }
   }
   return (

@@ -11,26 +11,34 @@ const Pagination = ({ totalPages, currentPage }: Props) => {
   const router = useRouter()
 
   const getPageLink = (page: number) => {
-    const q = typeof router.query.q === 'string' ? router.query.q : undefined
-    const tag = typeof router.query.tag === 'string' ? router.query.tag : undefined
-    const category = typeof router.query.category === 'string' ? router.query.category : undefined
+    const query = { ...router.query }
+    const { tag, category } = query
 
-    let path = '/'
-    if (tag) {
+    let path = ""
+    if (typeof tag === "string") {
       path = `/tag/${encodeURIComponent(tag)}`
       if (page > 1) path += `/page/${page}`
-    } else if (category) {
+      delete query.tag
+    } else if (typeof category === "string") {
       path = `/category/${encodeURIComponent(category)}`
       if (page > 1) path += `/page/${page}`
+      delete query.category
     } else {
-      path = page === 1 ? '/' : `/page/${page}`
+      path = page === 1 ? "/" : `/page/${page}`
     }
 
-    if (q) {
-      const sep = path.includes('?') ? '&' : '?'
-      path += `${sep}q=${encodeURIComponent(q)}`
-    }
-    return path
+    delete query.page
+
+    const queryString = Object.entries(query)
+      .filter(([_, v]) => v !== undefined)
+      .flatMap(([k, v]) =>
+        Array.isArray(v)
+          ? v.map((item) => `${k}=${encodeURIComponent(item)}`)
+          : `${k}=${encodeURIComponent(String(v))}`,
+      )
+      .join("&")
+
+    return queryString ? `${path}?${queryString}` : path
   }
 
   // Fixed number of page buttons (no dynamic adjustment)

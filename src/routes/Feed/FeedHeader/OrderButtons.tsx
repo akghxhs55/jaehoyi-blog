@@ -12,12 +12,23 @@ const OrderButtons: React.FC<Props> = () => {
   const currentOrder = `${router.query.order || ``}` || ("desc" as TOrder)
 
   const handleClickOrderBy = (value: TOrder) => {
-    router.push({
-      query: {
-        ...router.query,
-        order: value,
-      },
-    })
+    const query = { ...router.query }
+    const tag = query.tag
+    const category = query.category as string | undefined
+
+    delete query.page
+    query.order = value
+
+    let pathname = "/"
+    if (category && typeof category === "string") {
+      pathname = `/category/${encodeURIComponent(category)}`
+      delete query.category
+    } else if (tag && typeof tag === "string") {
+      pathname = `/tag/${encodeURIComponent(tag)}`
+      delete query.tag
+    }
+
+    router.push({ pathname, query })
   }
   return (
     <StyledWrapper>

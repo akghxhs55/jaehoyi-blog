@@ -44,6 +44,24 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
     return "and"
   })
 
+  const getBaseDetail = () => {
+    const query = { ...router.query }
+    const tag = query.tag
+    const category = query.category as string | undefined
+
+    delete (query as any).page
+
+    let pathname = "/"
+    if (category && typeof category === "string") {
+      pathname = `/category/${encodeURIComponent(category)}`
+      delete (query as any).category
+    } else if (tag && typeof tag === "string") {
+      pathname = `/tag/${encodeURIComponent(tag)}`
+      delete (query as any).tag
+    }
+    return { pathname, query }
+  }
+
   // 마운트 시 로컬 스토리지에서 모드 복원 (쿼리에 명시가 없을 때만)
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -61,9 +79,9 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
       | null
     if (stored === "and" || stored === "or") {
       setTagMode(stored)
-      const query = { ...router.query, tagMode: stored }
-      delete (query as any).page
-      router.replace({ pathname: router.pathname, query }, undefined, { shallow: true })
+      const { pathname, query } = getBaseDetail()
+      ;(query as any).tagMode = stored
+      router.replace({ pathname, query }, undefined, { shallow: true })
     }
   }, [router])
 
@@ -75,9 +93,9 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
       window.localStorage.setItem(TAG_MODE_STORAGE_KEY, nextMode)
     }
 
-    const query = { ...router.query, tagMode: nextMode }
-    delete (query as any).page
-    router.push({ pathname: router.pathname, query })
+    const { pathname, query } = getBaseDetail()
+    ;(query as any).tagMode = nextMode
+    router.push({ pathname, query })
   }
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {

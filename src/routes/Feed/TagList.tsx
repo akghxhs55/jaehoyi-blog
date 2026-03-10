@@ -34,10 +34,12 @@ const TagList: React.FC<Props> = ({ allTags, tagMode = "and", onToggleTagMode })
 
   const handleClickTag = (value: string) => {
     const nextTags = buildNextTags(value)
+    const query = { ...router.query }
+    delete query.page
 
     // no tag selected -> go home without tag param
     if (nextTags.length === 0) {
-      router.push({ pathname: "/", query: { ...router.query, tag: undefined } }, undefined, {
+      router.push({ pathname: "/", query: { ...query, tag: undefined } }, undefined, {
         shallow: false,
       })
       return
@@ -46,7 +48,7 @@ const TagList: React.FC<Props> = ({ allTags, tagMode = "and", onToggleTagMode })
     router.push(
       {
         pathname: "/",
-        query: { ...router.query, tag: nextTags },
+        query: { ...query, tag: nextTags },
       },
       undefined,
       { shallow: false },
