@@ -16,8 +16,9 @@ const TableOfContents: FC<Props> = ({ recordMap }) => {
     const keys = Object.keys(recordMap.block)
     const pageBlockId = keys[0]
     if (!pageBlockId) return []
-    const pageBlock = recordMap.block[pageBlockId]?.value
-    if (!pageBlock || pageBlock.type !== "page") return []
+    const blockValue = recordMap.block[pageBlockId]
+    const pageBlock = (blockValue as any)?.value || blockValue
+    if (!pageBlock || (pageBlock as any).type !== "page") return []
     return getPageTableOfContents(pageBlock as any, recordMap)
   }, [recordMap])
 
