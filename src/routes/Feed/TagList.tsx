@@ -39,7 +39,8 @@ const TagList: React.FC<Props> = ({ allTags, tagMode = "and", onToggleTagMode })
 
     // no tag selected -> go home without tag param
     if (nextTags.length === 0) {
-      router.push({ pathname: "/", query: { ...query, tag: undefined } }, undefined, {
+      delete query.tag
+      router.push({ pathname: "/", query }, undefined, {
         shallow: false,
       })
       return

@@ -52,12 +52,16 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
     delete (query as any).page
 
     let pathname = "/"
-    if (category && typeof category === "string") {
+    if (category && typeof category === "string" && category.trim().length > 0) {
       pathname = `/category/${encodeURIComponent(category)}`
       delete (query as any).category
-    } else if (tag && typeof tag === "string") {
+    } else if (tag && typeof tag === "string" && tag.trim().length > 0) {
       pathname = `/tag/${encodeURIComponent(tag)}`
       delete (query as any).tag
+    } else {
+      // Clean up empty parameters if they exist
+      delete (query as any).tag
+      delete (query as any).category
     }
     return { pathname, query }
   }
@@ -114,10 +118,15 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
 
     // Route-based navigation: keep current context (tag/category) if present
     let pathname = "/"
-    if (category && typeof category === "string") {
+    if (category && typeof category === "string" && category.trim().length > 0) {
       pathname = `/category/${encodeURIComponent(category)}`
-    } else if (tag) {
-      pathname = "/"
+      delete (query as any).category
+    } else if (tag && typeof tag === "string" && tag.trim().length > 0) {
+      pathname = `/tag/${encodeURIComponent(tag)}`
+      delete (query as any).tag
+    } else {
+      delete (query as any).tag
+      delete (query as any).category
     }
 
     router.push({ pathname, query })

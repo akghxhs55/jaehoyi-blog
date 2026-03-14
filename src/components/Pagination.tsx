@@ -15,11 +15,11 @@ const Pagination = ({ totalPages, currentPage }: Props) => {
     const { tag, category } = query
 
     let path = ""
-    if (typeof tag === "string") {
+    if (typeof tag === "string" && tag.trim().length > 0) {
       path = `/tag/${encodeURIComponent(tag)}`
       if (page > 1) path += `/page/${page}`
       delete query.tag
-    } else if (typeof category === "string") {
+    } else if (typeof category === "string" && category.trim().length > 0) {
       path = `/category/${encodeURIComponent(category)}`
       if (page > 1) path += `/page/${page}`
       delete query.category
