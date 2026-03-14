@@ -205,7 +205,7 @@ const StyledWrapper = styled.div`
     cursor: pointer;
     background-color: ${({ theme }) => theme.colors.gray1 ?? 'transparent'};
     font-size: 0.95rem;
-    color: ${({ theme }) => theme.colors.gray12 ?? theme.colors.gray11};
+    color: ${({ theme }) => theme.colors.gray11};
     box-sizing: border-box;
     font-variant-numeric: tabular-nums;
     -moz-font-feature-settings: 'tnum';
@@ -238,6 +238,7 @@ const StyledWrapper = styled.div`
   .page-number {
     &[data-active="true"] {
       font-weight: 700;
+      color: white;
       background-color: ${({ theme }) => theme.colors.blue9};
       border-color: ${({ theme }) => theme.colors.blue9};
     }

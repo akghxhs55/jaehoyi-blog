@@ -28,15 +28,32 @@ const useScheme = (): [SchemeType, SetScheme] => {
     if (typeof window === "undefined") return
 
     const cachedScheme = getCookie("scheme") as SchemeType
-    const defaultScheme = followsSystemTheme
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light"
-      : data
     
-    const finalScheme = cachedScheme || defaultScheme
-    if (data !== finalScheme) {
-      setScheme(finalScheme)
+    // Determine the initial scheme
+    const getSystemScheme = () => 
+      window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+
+    const initialScheme = cachedScheme || (followsSystemTheme ? getSystemScheme() : data)
+
+    if (data !== initialScheme) {
+      setScheme(initialScheme as SchemeType)
+    }
+
+    // If following system theme, listen for changes
+    if (followsSystemTheme) {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      const handleChange = (e: MediaQueryListEvent) => {
+        // Only update if the user hasn't manually overridden (optional choice, 
+        // but usually 'system' means it follows system unless switched)
+        // Here we'll respect the switch if cachedScheme exists, 
+        // but if we want TRUE 'system' mode, we might ignore cache.
+        // For now, let's allow system changes to trigger updates.
+        const nextScheme = e.matches ? "dark" : "light"
+        setScheme(nextScheme)
+      }
+
+      mediaQuery.addEventListener("change", handleChange)
+      return () => mediaQuery.removeEventListener("change", handleChange)
     }
   }, [data, followsSystemTheme])
 

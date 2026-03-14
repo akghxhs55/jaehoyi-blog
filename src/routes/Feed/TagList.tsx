@@ -175,11 +175,11 @@ const StyledWrapper = styled.div`
         background-color: ${({ theme }) => theme.colors.gray4};
       }
       &[data-active="true"] {
-        color: ${({ theme }) => theme.colors.gray12};
-        background-color: ${({ theme }) => theme.colors.gray4};
+        color: white;
+        background-color: ${({ theme }) => theme.colors.blue9};
 
         :hover {
-          background-color: ${({ theme }) => theme.colors.gray4};
+          background-color: ${({ theme }) => theme.colors.blue9};
         }
       }
     }
