@@ -23,10 +23,11 @@ type Props = {
   posts: TPost[]
   currentPage: number
   allTags: string[]
+  categoryPosts: TPost[]
   category: string
 }
 
-const CategoryPage: NextPage<Props> = ({ posts, currentPage, allTags, category }) => {
+const CategoryPage: NextPage<Props> = ({ posts, currentPage, allTags, categoryPosts, category }) => {
   const meta = {
     title: `${CONFIG.blog.title}`,
     description: CONFIG.blog.description,
@@ -36,7 +37,7 @@ const CategoryPage: NextPage<Props> = ({ posts, currentPage, allTags, category }
   return (
     <>
       <MetaConfig {...meta} />
-      <Feed posts={posts} allTags={allTags} />
+      <Feed posts={posts} allTags={allTags} categoryPosts={categoryPosts} />
     </>
   )
 }
@@ -72,6 +73,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
       posts: byCategory,
       currentPage: 1,
       allTags,
+      categoryPosts: visible,
       category,
     },
     revalidate,

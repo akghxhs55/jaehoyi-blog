@@ -4,13 +4,20 @@ import React from "react"
 import { MdExpandMore } from "react-icons/md"
 import { DEFAULT_CATEGORY } from "src/constants"
 import styled from "@emotion/styled"
-import { useCategoriesQuery } from "src/hooks/useCategoriesQuery"
+import { getAllSelectItemsFromPosts } from "src/libs/utils/notion"
+import { TPost } from "src/types"
 
-type Props = {}
+type Props = {
+  posts: TPost[]
+}
 
-const CategorySelect: React.FC<Props> = () => {
+const CategorySelect: React.FC<Props> = ({ posts }) => {
   const router = useRouter()
-  const data = useCategoriesQuery()
+  const categories = getAllSelectItemsFromPosts("category", posts)
+  const data = {
+    [DEFAULT_CATEGORY]: posts.length,
+    ...categories,
+  }
   const [dropdownRef, opened, handleOpen] = useDropdown()
 
   const currentCategory = `${router.query.category || ``}` || DEFAULT_CATEGORY

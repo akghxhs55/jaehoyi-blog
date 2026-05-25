@@ -24,11 +24,12 @@ const HEADER_HEIGHT = 73
 type Props = {
   posts: TPost[]
   allTags: string[]
+  categoryPosts?: TPost[]
 }
 
 const TAG_MODE_STORAGE_KEY = "feed_tag_mode"
 
-const Feed: React.FC<Props> = ({ posts, allTags }) => {
+const Feed: React.FC<Props> = ({ posts, allTags, categoryPosts = posts }) => {
   const router = useRouter()
   const q = typeof router.query.q === "string" ? router.query.q : ""
   const [inputQ, setInputQ] = useState(q)
@@ -192,7 +193,7 @@ const Feed: React.FC<Props> = ({ posts, allTags }) => {
           <div className="tags">
             <TagList allTags={allTags} tagMode={tagMode} onToggleTagMode={toggleTagMode} />
           </div>
-          <FeedHeader />
+          <FeedHeader posts={categoryPosts} />
           <PostList posts={paginatedPosts} q={q} />
           <Pagination currentPage={currentPage} totalPages={totalPages} />
           <div className="footer">
