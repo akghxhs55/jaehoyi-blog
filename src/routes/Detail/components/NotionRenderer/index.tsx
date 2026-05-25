@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic"
 import Image from "next/image"
+import type { ImageProps } from "next/image"
 import Link from "next/link"
 import { ExtendedRecordMap } from "notion-types"
 import useScheme from "src/hooks/useScheme"
@@ -57,6 +58,39 @@ const Modal = dynamic(
 
 const mapPageUrl = (id: string) => {
   return "https://www.notion.so/" + id.replace(/-/g, "")
+}
+
+const NotionImage = ({ width, height, fill, ...props }: ImageProps) => {
+  const src = typeof props.src === "string" ? props.src : ""
+  const isAnimatedGif = src.toLowerCase().includes(".gif")
+  const alt = props.alt || ""
+
+  if (!width || !height) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        alt={alt}
+        className={props.className}
+        loading={props.loading === "eager" ? "eager" : "lazy"}
+        onLoad={props.onLoad}
+        src={src}
+        style={props.style}
+      />
+    )
+  }
+
+  return (
+    <Image
+      {...props}
+      alt={alt}
+      fill={fill}
+      width={width}
+      height={height}
+      sizes={props.sizes || "(max-width: 768px) calc(100vw - 2rem), 800px"}
+      quality={props.quality || 75}
+      unoptimized={props.unoptimized || isAnimatedGif}
+    />
+  )
 }
 
 type Props = {
@@ -214,10 +248,11 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
           Equation,
           Modal,
           Pdf,
-          nextImage: Image,
+          nextImage: NotionImage,
           nextLink: Link,
         }}
         mapPageUrl={mapPageUrl}
+        forceCustomImages
       />
     </StyledWrapper>
   )

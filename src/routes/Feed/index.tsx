@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Head from "next/head"
 
 import SearchInput from "./SearchInput"
@@ -45,7 +45,7 @@ const Feed: React.FC<Props> = ({ posts, allTags, categoryPosts = posts }) => {
     return "and"
   })
 
-  const getBaseDetail = () => {
+  const getBaseDetail = useCallback(() => {
     const query = { ...router.query }
     const tag = query.tag
     const category = query.category as string | undefined
@@ -65,7 +65,7 @@ const Feed: React.FC<Props> = ({ posts, allTags, categoryPosts = posts }) => {
       delete (query as any).category
     }
     return { pathname, query }
-  }
+  }, [router.query])
 
   // 마운트 시 로컬 스토리지에서 모드 복원 (쿼리에 명시가 없을 때만)
   useEffect(() => {
@@ -88,7 +88,7 @@ const Feed: React.FC<Props> = ({ posts, allTags, categoryPosts = posts }) => {
       ;(query as any).tagMode = stored
       router.replace({ pathname, query }, undefined, { shallow: true })
     }
-  }, [router])
+  }, [getBaseDetail, router])
 
   const toggleTagMode = () => {
     const nextMode: "and" | "or" = tagMode === "and" ? "or" : "and"

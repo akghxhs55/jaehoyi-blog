@@ -1,6 +1,9 @@
 module.exports = {
   images: {
     formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+    deviceSizes: [360, 480, 640, 768, 960, 1120, 1280],
+    imageSizes: [96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: "https",
