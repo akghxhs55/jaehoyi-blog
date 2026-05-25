@@ -14,7 +14,12 @@ const SearchInput: React.FC<Props> = ({ onSubmit, ...props }) => {
       <div className="top">
         <Emoji>🔎</Emoji> Search
       </div>
-      <form onSubmit={onSubmit} className="mid" role="search">
+      <form
+        onClick={() => inputRef.current?.focus()}
+        onSubmit={onSubmit}
+        className="mid"
+        role="search"
+      >
         <input
           ref={inputRef}
           type="text"
@@ -48,5 +53,19 @@ const StyledWrapper = styled.div`
     width: 100%;
     background-color: ${({ theme }) => theme.colors.gray4};
     cursor: text;
+
+    &:focus-within {
+      outline: 2px solid ${({ theme }) => theme.colors.indigo10};
+      outline-offset: 2px;
+    }
+
+    > input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+    }
   }
 `
