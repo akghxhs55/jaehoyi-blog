@@ -1,6 +1,7 @@
 import { GetStaticPaths, GetStaticProps, NextPage } from "next"
 import { CONFIG } from "site.config"
 import { getPosts } from "src/apis"
+import { filterPosts } from "src/libs/utils/notion"
 import Feed from "src/routes/Feed"
 import { TPost } from "src/types"
 import MetaConfig from "src/components/MetaConfig"
@@ -42,7 +43,7 @@ const CategoryPagedPage: NextPage<Props> = ({ posts, currentPage, allTags, categ
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const posts = await getPosts()
-  const cats = getTopCategories(posts, 50)
+  const cats = getTopCategories(filterPosts(posts), 50)
   const paths = cats.map((c) => ({ params: { category: c, page: '1' } }))
   return {
     paths,
@@ -62,15 +63,17 @@ export const getStaticProps: GetStaticProps = async (context) => {
   }
 
   const posts = await getPosts()
-  const visible = posts.filter((p) => p.status?.includes("Public"))
-  const byCategory = visible.filter((p) => (p.category || "") === category)
+  const visible = filterPosts(posts)
+  const byCategory = visible.filter((p) =>
+    Array.isArray(p.category) ? p.category.includes(category) : p.category === category,
+  )
 
   if (byCategory.length === 0) {
     return { notFound: true, revalidate }
   }
 
   // Allow any page number >=1; Feed will handle slicing/pagination.
-  const allTags = Array.from(new Set(posts.flatMap((p) => p.tags || [])))
+  const allTags = Array.from(new Set(visible.flatMap((p) => p.tags || [])))
 
   return {
     props: {

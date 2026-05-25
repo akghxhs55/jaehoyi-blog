@@ -1,6 +1,7 @@
 import { GetStaticProps, NextPage } from "next"
 import { CONFIG } from "site.config"
 import { getPosts } from "src/apis"
+import { filterPosts } from "src/libs/utils/notion"
 import Feed from "src/routes/Feed"
 import { TPost } from "src/types"
 import MetaConfig from "src/components/MetaConfig"
@@ -30,10 +31,9 @@ export const getStaticProps: GetStaticProps = async () => {
 
   const posts = await getPosts()
 
-  // Only public posts, default order desc (getPosts already sorted desc)
-  const visiblePosts = posts.filter((post) => post.status?.includes("Public"))
+  const visiblePosts = filterPosts(posts)
 
-  const allTags = Array.from(new Set(posts.flatMap((post) => post.tags || [])))
+  const allTags = Array.from(new Set(visiblePosts.flatMap((post) => post.tags || [])))
 
   return {
     props: {

@@ -1,6 +1,7 @@
 import { GetStaticPaths, GetStaticProps, NextPage } from "next"
 import { CONFIG } from "site.config"
 import { getPosts } from "src/apis"
+import { filterPosts } from "src/libs/utils/notion"
 import Feed from "src/routes/Feed"
 import { TPost } from "src/types"
 import MetaConfig from "src/components/MetaConfig"
@@ -42,7 +43,7 @@ const CategoryPage: NextPage<Props> = ({ posts, currentPage, allTags, category }
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const posts = await getPosts()
-  const cats = getTopCategories(posts, 50)
+  const cats = getTopCategories(filterPosts(posts), 50)
   return {
     paths: cats.map((c) => ({ params: { category: c } })),
     fallback: "blocking",
@@ -55,7 +56,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   const category = String(Array.isArray(raw) ? raw[0] : raw)
 
   const posts = await getPosts()
-  const visible = posts.filter((p) => p.status?.includes("Public"))
+  const visible = filterPosts(posts)
   const byCategory = visible.filter((p) =>
     Array.isArray(p.category) ? p.category.includes(category) : p.category === category,
   )
@@ -64,7 +65,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
     return { notFound: true, revalidate }
   }
 
-  const allTags = Array.from(new Set(posts.flatMap((p) => p.tags || [])))
+  const allTags = Array.from(new Set(visible.flatMap((p) => p.tags || [])))
 
   return {
     props: {

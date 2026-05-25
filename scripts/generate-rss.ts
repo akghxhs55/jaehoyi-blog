@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import RSS from 'rss';
 import { getPosts } from "src/apis/notion-client/getPosts";
+import { filterPosts } from "src/libs/utils/notion";
 import { CONFIG } from "../site.config.js";
 
 async function generateRssFeed() {
@@ -14,7 +15,7 @@ async function generateRssFeed() {
     pubDate: new Date(),
   });
 
-  const posts = await getPosts();
+  const posts = filterPosts(await getPosts());
 
   posts.forEach((post) => {
     const url = `${CONFIG.link}/${encodeURIComponent(post.slug)}`;

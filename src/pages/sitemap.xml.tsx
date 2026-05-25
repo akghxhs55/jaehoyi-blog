@@ -1,6 +1,7 @@
 import { getPosts } from "../apis"
 import { CONFIG } from "site.config"
 import type { GetServerSideProps } from "next"
+import { filterPosts } from "src/libs/utils/notion"
 
 function escapeXml(value: string) {
   return value
@@ -18,10 +19,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   try {
     const posts = (await getPosts()) || []
 
-    // Include only visible/public posts with valid slug
-    const visible = (Array.isArray(posts) ? posts : []).filter(
-      (p: any) => p?.slug && p?.status?.includes?.("Public")
-    )
+    const visible = filterPosts(Array.isArray(posts) ? posts : [])
 
     const urls: { loc: string; lastmod: string; changefreq: string; priority: string }[] = []
 
