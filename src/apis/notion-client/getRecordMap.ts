@@ -1,5 +1,5 @@
 import { NotionAPI } from "notion-client"
-import { withNotionFileCache, withNotionRetry } from "./notionCache"
+import { clearNotionFileCache, withNotionFileCache, withNotionRetry } from "./notionCache"
 import { CONFIG } from "site.config"
 
 export const getRecordMap = async (pageId: string) => {
@@ -10,3 +10,6 @@ export const getRecordMap = async (pageId: string) => {
     withNotionRetry(() => api.getPage(pageId))
   )
 }
+
+export const clearRecordMapCache = (pageId: string) =>
+  clearNotionFileCache(`record-map:${pageId}`)

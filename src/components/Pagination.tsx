@@ -73,59 +73,81 @@ const Pagination = ({ totalPages, currentPage }: Props) => {
   const isFirstPage = currentPage === 1
   const isLastPage = currentPage === totalPages
 
+  const renderMove = (
+    disabled: boolean,
+    href: string,
+    label: string,
+    iconPath: string,
+  ) => {
+    const content = (
+      <>
+        <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d={iconPath} fill="currentColor" />
+        </svg>
+        <span className="sr-only">{label}</span>
+      </>
+    )
+
+    if (disabled) {
+      return (
+        <span className="move" aria-disabled="true" aria-label={label} title={label}>
+          {content}
+        </span>
+      )
+    }
+
+    return (
+      <Link className="move" href={href} aria-label={label} title={label}>
+        {content}
+      </Link>
+    )
+  }
+
   return (
     <StyledWrapper>
       <div className="bar" role="navigation" aria-label="Pagination">
-        {/* '<<' Move to First Page */}
-        <Link href={isFirstPage ? "#" : getPageLink(1)} passHref>
-          <button className="move" disabled={isFirstPage} aria-label="First page" title="First page">
-            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M11.5 12L18 5.5v13L11.5 12zM6 12l6.5-6.5v13L6 12z" fill="currentColor" />
-            </svg>
-          </button>
-        </Link>
+        {renderMove(
+          isFirstPage,
+          getPageLink(1),
+          "First page",
+          "M11.5 12L18 5.5v13L11.5 12zM6 12l6.5-6.5v13L6 12z",
+        )}
 
-        {/* '<' Move to Previous Page */}
-        <Link href={isFirstPage ? "#" : getPageLink(currentPage - 1)} passHref>
-          <button className="move" disabled={isFirstPage} aria-label="Previous page" title="Previous page">
-            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M9.5 12L16 5.5v13L9.5 12z" fill="currentColor" />
-            </svg>
-          </button>
-        </Link>
+        {renderMove(
+          isFirstPage,
+          getPageLink(currentPage - 1),
+          "Previous page",
+          "M9.5 12L16 5.5v13L9.5 12z",
+        )}
 
         {/* Page Numbers */}
         <div className="page-numbers" role="list">
           {pages.map((page) => (
-            <Link key={page} href={getPageLink(page)} passHref>
-              <button
-                className="page-number"
-                data-active={currentPage === page}
-                aria-current={currentPage === page ? 'page' : undefined}
-              >
-                {page}
-              </button>
+            <Link
+              key={page}
+              href={getPageLink(page)}
+              className="page-number"
+              data-active={currentPage === page}
+              aria-current={currentPage === page ? "page" : undefined}
+            >
+              {page}
             </Link>
           ))}
         </div>
 
-        {/* '>' Move to Next Page */}
-        <Link href={isLastPage ? "#" : getPageLink(currentPage + 1)} passHref>
-          <button className="move" disabled={isLastPage} aria-label="Next page" title="Next page">
-            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M14.5 12L8 5.5v13L14.5 12z" fill="currentColor" />
-            </svg>
-          </button>
-        </Link>
+        {renderMove(
+          isLastPage,
+          getPageLink(currentPage + 1),
+          "Next page",
+          "M14.5 12L8 5.5v13L14.5 12z",
+        )}
 
-        {/* '>>' Move to Last Page */}
-        <Link href={isLastPage ? "#" : getPageLink(totalPages)} passHref>
-          <button className="move" disabled={isLastPage} aria-label="Last page" title="Last page">
-            <svg className="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12.5 12L6 5.5v13L12.5 12zM18 12l-6.5-6.5v13L18 12z" fill="currentColor" />
-            </svg>
-          </button>
-        </Link>
+        {renderMove(
+          isLastPage,
+          getPageLink(totalPages),
+          "Last page",
+          "M12.5 12L6 5.5v13L12.5 12zM18 12l-6.5-6.5v13L18 12z",
+        )}
       </div>
 
       {/* Total pages indicator (placed below the buttons) */}
@@ -168,10 +190,11 @@ const StyledWrapper = styled.div`
     background-color: ${({ theme }) => theme.colors.gray1 ?? 'transparent'};
     color: ${({ theme }) => theme.colors.gray11};
     box-sizing: border-box;
+    text-decoration: none;
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
     flex: 0 0 auto; /* prevent shrinking within scroll container */
 
-    &:hover:not(:disabled) {
+    &:hover:not([aria-disabled="true"]) {
       background-color: ${({ theme }) => theme.colors.gray3};
       border-color: ${({ theme }) => theme.colors.gray8};
     }
@@ -179,7 +202,7 @@ const StyledWrapper = styled.div`
       outline: 2px solid ${({ theme }) => theme.colors.blue7};
       outline-offset: 2px;
     }
-    &:disabled {
+    &[aria-disabled="true"] {
       color: ${({ theme }) => theme.colors.gray8};
       cursor: default;
       opacity: 0.6;
@@ -213,6 +236,7 @@ const StyledWrapper = styled.div`
     font-feature-settings: 'tnum';
     transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
     flex: 0 0 auto; /* prevent shrinking within scroll container */
+    text-decoration: none;
 
     &:hover {
       border-color: ${({ theme }) => theme.colors.gray8};
@@ -222,6 +246,18 @@ const StyledWrapper = styled.div`
       outline: 2px solid ${({ theme }) => theme.colors.blue7};
       outline-offset: 2px;
     }
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .total {

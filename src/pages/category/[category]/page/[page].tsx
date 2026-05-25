@@ -29,8 +29,8 @@ type Props = {
 
 const CategoryPagedPage: NextPage<Props> = ({ posts, currentPage, allTags, categoryPosts, category }) => {
   const meta = {
-    title: `${CONFIG.blog.title}`,
-    description: CONFIG.blog.description,
+    title: `${category} 카테고리 글 ${currentPage}페이지 | ${CONFIG.blog.title}`,
+    description: `${category} 카테고리에 속한 ${CONFIG.blog.title}의 글 목록 ${currentPage}페이지입니다.`,
     type: "Website",
     url: `${CONFIG.link}/category/${encodeURIComponent(category)}/page/${currentPage}`,
   }

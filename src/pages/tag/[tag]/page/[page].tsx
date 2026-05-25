@@ -30,8 +30,8 @@ type Props = {
 
 const TagPagedPage: NextPage<Props> = ({ posts, currentPage, allTags, categoryPosts, tag }) => {
   const meta = {
-    title: `${CONFIG.blog.title}`,
-    description: CONFIG.blog.description,
+    title: `${tag} 태그 글 ${currentPage}페이지 | ${CONFIG.blog.title}`,
+    description: `${tag} 태그로 분류된 ${CONFIG.blog.title}의 글 목록 ${currentPage}페이지입니다.`,
     type: "Website",
     url: `${CONFIG.link}/tag/${encodeURIComponent(tag)}/page/${currentPage}`,
   }

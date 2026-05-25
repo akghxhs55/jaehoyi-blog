@@ -104,6 +104,17 @@ export async function withNotionFileCache<T>(
   }
 }
 
+export async function clearNotionFileCache(key: string) {
+  const safeKey = key.replace(/[^a-zA-Z0-9._-]/g, "_")
+  const filePath = path.join(cacheDir, `${safeKey}.json`)
+  const lockPath = path.join(cacheDir, `${safeKey}.lock`)
+
+  await Promise.all([
+    fs.unlink(filePath).catch(() => undefined),
+    fs.unlink(lockPath).catch(() => undefined),
+  ])
+}
+
 function isRetryableNotionError(error: unknown) {
   const status =
     (error as any)?.status ||

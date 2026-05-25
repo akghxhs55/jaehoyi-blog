@@ -5,8 +5,8 @@ import { idToUuid } from "notion-utils"
 import getAllPageIds from "src/libs/utils/notion/getAllPageIds"
 import getPageProperties from "src/libs/utils/notion/getPageProperties"
 import { TPosts } from "src/types"
-import { kvGet, kvSet } from "src/libs/cache/kv"
-import { withNotionFileCache, withNotionRetry } from "./notionCache"
+import { kvDel, kvGet, kvSet } from "src/libs/cache/kv"
+import { clearNotionFileCache, withNotionFileCache, withNotionRetry } from "./notionCache"
 
 /**
  * @param {{ includePages: boolean }} - false: posts only / true: include pages
@@ -41,6 +41,14 @@ export const getPosts = async () => {
     await kvSet<TPosts>(kvKey, posts, ttlSec)
     return posts
   })
+}
+
+export const clearPostsCache = async () => {
+  POSTS_CACHE = null
+  await Promise.all([
+    kvDel("notion:posts"),
+    clearNotionFileCache("posts"),
+  ])
 }
 
 async function getPostsFromNotion(ttlSec: number) {

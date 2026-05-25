@@ -102,6 +102,7 @@ const buildJsonLd = (props: MetaConfigProps) => {
 
 const MetaConfig: React.FC<MetaConfigProps> = (props) => {
   const jsonLd = buildJsonLd(props)
+  const imageUrl = ensureAbsoluteUrl(props.image)
   return (
     <Head>
       <title>{props.title}</title>
@@ -117,12 +118,12 @@ const MetaConfig: React.FC<MetaConfigProps> = (props) => {
       <meta property="og:url" content={props.url} />
       <meta property="og:updated_time" content={props.date} />
       {CONFIG.lang && <meta property="og:locale" content={CONFIG.lang} />}
-      {props.image && <meta property="og:image" content={props.image} />}
+      {imageUrl && <meta property="og:image" content={imageUrl} />}
       {/* twitter */}
       <meta name="twitter:title" content={props.title} />
       <meta name="twitter:description" content={props.description} />
       <meta name="twitter:card" content="summary_large_image" />
-      {props.image && <meta name="twitter:image" content={props.image} />}
+      {imageUrl && <meta name="twitter:image" content={imageUrl} />}
       {/* post */}
       {(props.type === "Post" || props.type === "Paper") && (
         <>

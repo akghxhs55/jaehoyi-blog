@@ -10,6 +10,7 @@ import { QueryClient, dehydrate } from "@tanstack/react-query"
 import { queryKey } from "src/constants/queryKey"
 import usePostQuery from "src/hooks/usePostQuery"
 import { FilterPostsOptions } from "src/libs/utils/notion/filterPosts"
+import { pruneRecordMap } from "src/libs/utils/notion/pruneRecordMap"
 
 const filter: FilterPostsOptions = {
   acceptStatus: ["Public", "PublicOnDetail"],
@@ -40,12 +41,6 @@ export const getStaticProps: GetStaticProps = async (context) => {
   const qc = new QueryClient()
 
   const posts = await getPosts()
-  const feedPosts = filterPosts(posts)
-  await qc.prefetchQuery({
-    queryKey: queryKey.posts(),
-    queryFn: async () => feedPosts,
-  })
-
   const detailPosts = filterPosts(posts, filter)
   const postDetail = detailPosts.find((t: any) => t.slug === slug)
 
@@ -56,7 +51,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
     }
   }
 
-  const recordMap = await getRecordMap(postDetail.id)
+  const recordMap = pruneRecordMap(await getRecordMap(postDetail.id), postDetail.id)
 
   await qc.prefetchQuery({
     queryKey: queryKey.post(slug),
@@ -80,9 +75,10 @@ const DetailPage: NextPageWithLayout = () => {
   if (!post) return <CustomError />
 
   const image =
-    post.thumbnail ??
-    CONFIG.ogImageGenerateURL ??
-    `${CONFIG.ogImageGenerateURL}/${encodeURIComponent(post.title)}.png`
+    post.thumbnail ||
+    (CONFIG.ogImageGenerateURL
+      ? `${CONFIG.ogImageGenerateURL}/${encodeURIComponent(post.title)}.png`
+      : CONFIG.profile.image)
 
   const date = post.date?.start_date || post.createdTime || ""
 

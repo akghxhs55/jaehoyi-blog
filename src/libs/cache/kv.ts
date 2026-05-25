@@ -6,6 +6,7 @@ import { Redis } from "@upstash/redis"
 export type KvLike = {
   get<T = unknown>(key: string): Promise<T | null>
   set<T = unknown>(key: string, value: T, opts?: { ex?: number }): Promise<unknown>
+  del?(...keys: string[]): Promise<unknown>
 }
 
 let cachedClient: KvLike | null | undefined
@@ -59,6 +60,17 @@ export async function kvSet<T = unknown>(
   if (!client) return false
   try {
     await client.set(key, value as unknown as any, ex ? { ex } : undefined)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function kvDel(...keys: string[]): Promise<boolean> {
+  const client = await getClient()
+  if (!client?.del || keys.length === 0) return false
+  try {
+    await client.del(...keys)
     return true
   } catch {
     return false
