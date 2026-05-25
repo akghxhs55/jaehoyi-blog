@@ -10,6 +10,7 @@ import { QueryClient, dehydrate } from "@tanstack/react-query"
 import { queryKey } from "src/constants/queryKey"
 import usePostQuery from "src/hooks/usePostQuery"
 import { FilterPostsOptions } from "src/libs/utils/notion/filterPosts"
+import { getRecordMapExcerpt } from "src/libs/utils/notion/getRecordMapExcerpt"
 import { pruneRecordMap } from "src/libs/utils/notion/pruneRecordMap"
 
 const filter: FilterPostsOptions = {
@@ -52,11 +53,13 @@ export const getStaticProps: GetStaticProps = async (context) => {
   }
 
   const recordMap = pruneRecordMap(await getRecordMap(postDetail.id), postDetail.id)
+  const excerpt = postDetail.summary || getRecordMapExcerpt(recordMap, postDetail.id)
 
   await qc.prefetchQuery({
     queryKey: queryKey.post(slug),
     queryFn: async () => ({
       ...postDetail,
+      excerpt,
       recordMap,
     }),
   })
@@ -86,7 +89,7 @@ const DetailPage: NextPageWithLayout = () => {
     title: post.title,
     date: new Date(date).toISOString(),
     image: image,
-    description: post.summary || "",
+    description: post.summary || post.excerpt || CONFIG.blog.description,
     type: post.type[0],
     url: `${CONFIG.link}/${post.slug}`,
   }

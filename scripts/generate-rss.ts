@@ -22,7 +22,7 @@ async function generateRssFeed() {
 
     feed.item({
       title: post.title,
-      description: post.summary || '',
+      description: post.summary || CONFIG.blog.description,
       url: url,
       guid: url,
       date: new Date(post.date?.start_date || post.createdTime),
