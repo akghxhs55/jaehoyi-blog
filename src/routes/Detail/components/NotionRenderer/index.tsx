@@ -263,6 +263,10 @@ const StyledWrapper = styled.div`
   .notion-list {
     width: 100%;
   }
+  .notion-list-disc li {
+    padding-top: 1px;
+    padding-bottom: 1px;
+  }
 
   /* Code block copy button sizing and layout */
   .notion-code {
