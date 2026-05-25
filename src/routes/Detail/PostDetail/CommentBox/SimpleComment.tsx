@@ -92,7 +92,9 @@ const SimpleComment: React.FC<Props> = ({ slug }) => {
 
   return (
     <StyledWrapper>
-      <div className="comment-header">Comments ({displayedComments.length || 0})</div>
+      <div className="comment-header">
+        💬 Comments ({displayedComments.length || 0})
+      </div>
 
       <form onSubmit={handleSubmit} className="comment-form">
         <input
