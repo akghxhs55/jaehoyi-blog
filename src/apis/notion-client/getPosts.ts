@@ -6,6 +6,7 @@ import getAllPageIds from "src/libs/utils/notion/getAllPageIds"
 import getPageProperties from "src/libs/utils/notion/getPageProperties"
 import { TPosts } from "src/types"
 import { kvGet, kvSet } from "src/libs/cache/kv"
+import { withNotionFileCache, withNotionRetry } from "./notionCache"
 
 /**
  * @param {{ includePages: boolean }} - false: posts only / true: include pages
@@ -34,10 +35,20 @@ export const getPosts = async () => {
     return POSTS_CACHE.data
   }
 
+  return withNotionFileCache<TPosts>("posts", ttlMs, async () => {
+    const posts = await getPostsFromNotion(ttlSec)
+    POSTS_CACHE = { data: posts, ts: now }
+    await kvSet<TPosts>(kvKey, posts, ttlSec)
+    return posts
+  })
+}
+
+async function getPostsFromNotion(ttlSec: number) {
+  const kvKey = "notion:posts"
   let id = CONFIG.notionConfig.pageId as string
   const api = new NotionAPI()
 
-  const response = await api.getPage(id)
+  const response = await withNotionRetry(() => api.getPage(id))
   id = idToUuid(id)
   // Handle nested value structure in new Notion API
   const collectionEntry = Object.values(response.collection)[0]
@@ -53,7 +64,6 @@ export const getPosts = async () => {
     rawMetadata?.type !== "collection_view_page" &&
     rawMetadata?.type !== "collection_view"
   ) {
-    POSTS_CACHE = { data: [], ts: now }
     // Populate empty list to KV to avoid repeated Notion hits if misconfigured
     await kvSet<TPosts>(kvKey, [], ttlSec)
     return []
@@ -65,11 +75,10 @@ export const getPosts = async () => {
       const id = pageIds[i]
       const properties = (await getPageProperties(id, block, schema)) || null
       // Handle nested value structure in new Notion API
-      const blockValue = (block[id] as any)?.value?.value || (block[id] as any)?.value
+      const blockValue =
+        (block[id] as any)?.value?.value || (block[id] as any)?.value
       // Add fullwidth, createdtime to properties
-      properties.createdTime = new Date(
-        blockValue?.created_time
-      ).toString()
+      properties.createdTime = new Date(blockValue?.created_time).toString()
       properties.fullWidth =
         (blockValue?.format as any)?.page_full_width ?? false
 
@@ -83,10 +92,6 @@ export const getPosts = async () => {
       return dateB - dateA
     })
 
-    const posts = data as TPosts
-    POSTS_CACHE = { data: posts, ts: now }
-    // Write-through to KV for cross-instance caching
-    await kvSet<TPosts>(kvKey, posts, ttlSec)
-    return posts
+    return data as TPosts
   }
 }

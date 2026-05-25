@@ -1,7 +1,8 @@
-import { getTextContent, getDateValue } from "notion-utils"
+import { getDateValue, getTextContent } from "notion-utils"
 import { NotionAPI } from "notion-client"
 import { BlockMap, CollectionPropertySchemaMap } from "notion-types"
 import { customMapImageUrl } from "./customMapImageUrl"
+import { withNotionRetry } from "src/apis/notion-client/notionCache"
 
 async function getPageProperties(
   id: string,
@@ -24,8 +25,8 @@ async function getPageProperties(
         case "file": {
           try {
             const url: string = val[0][1][0][1]
-            const newurl = customMapImageUrl(url, blockValue)
-            properties[schema[key].name] = newurl
+            
+            properties[schema[key].name] = customMapImageUrl(url, blockValue)
           } catch (error) {
             properties[schema[key].name] = undefined
           }
@@ -58,7 +59,7 @@ async function getPageProperties(
           for (let i = 0; i < rawUsers.length; i++) {
             if (rawUsers[i][0][1]) {
               const userId = rawUsers[i][0]
-              const res: any = await api.getUsers(userId)
+              const res: any = await withNotionRetry(() => api.getUsers(userId))
               const resValue =
                 res?.recordMapWithRoles?.notion_user?.[userId[1]]?.value
               const user = {

@@ -24,6 +24,11 @@ module.exports = {
     "notion-types",
     "react-notion-x",
   ],
+  experimental: {
+    staticGenerationRetryCount: 3,
+    staticGenerationMaxConcurrency: 1,
+    staticGenerationMinPagesPerWorker: 1000,
+  },
   async redirects() {
     return [
       // /?tag=foo -> /tag/foo
