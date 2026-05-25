@@ -22,7 +22,7 @@ const CommentBox: React.FC<Props> = ({ data }) => {
   useEffect(() => {
     // If IntersectionObserver isn't supported, mount immediately on client
     if (typeof IntersectionObserver === "undefined") {
-      setIsVisible(true)
+      requestAnimationFrame(() => setIsVisible(true))
       return
     }
 
@@ -52,7 +52,7 @@ const CommentBox: React.FC<Props> = ({ data }) => {
     <div ref={containerRef}>
       {isVisible && (
         <>
-          <SimpleComment slug={data.id} />
+          <SimpleComment key={data.id} slug={data.id} />
           {CONFIG.utterances.enable && (
             <UtterancesComponent issueTerm={data.id} />
           )}

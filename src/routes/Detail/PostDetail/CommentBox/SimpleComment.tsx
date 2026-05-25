@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import styled from "@emotion/styled"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { formatDate } from "src/libs/utils"
@@ -14,26 +14,27 @@ type Props = {
   slug: string
 }
 
+const getRecentLocalComments = (slug: string) => {
+  if (typeof window !== "object") return []
+
+  try {
+    const stored = localStorage.getItem(`local_comments_${slug}`)
+    if (!stored) return []
+
+    const parsed = JSON.parse(stored)
+    return parsed.filter((c: CommentData) => Date.now() - c.date < 1000 * 60 * 5)
+  } catch {
+    return []
+  }
+}
+
 const SimpleComment: React.FC<Props> = ({ slug }) => {
   const queryClient = useQueryClient()
   const [author, setAuthor] = useState("")
   const [content, setContent] = useState("")
-  const [localComments, setLocalComments] = useState<CommentData[]>([])
-
-  // Load locally saved comments on mount (client-side only trick)
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(`local_comments_${slug}`)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        // Filter out comments older than 5 minutes (cache TTL) to avoid eternal duplicates
-        const recent = parsed.filter((c: CommentData) => Date.now() - c.date < 1000 * 60 * 5)
-        setLocalComments(recent)
-      }
-    } catch {
-      // ignore
-    }
-  }, [slug])
+  const [localComments, setLocalComments] = useState<CommentData[]>(() =>
+    getRecentLocalComments(slug)
+  )
 
   const { data: serverComments, isLoading } = useQuery<CommentData[]>({
     queryKey: ["comments", slug],
