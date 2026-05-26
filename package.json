@@ -4,9 +4,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "yarn generate:feeds && next build",
     "start": "next start",
-    "postbuild": "tsx -r dotenv/config ./scripts/generate-rss.ts",
+    "generate:feeds": "tsx -r dotenv/config ./scripts/generate-rss.ts",
     "lint": "eslint ."
   },
   "dependencies": {

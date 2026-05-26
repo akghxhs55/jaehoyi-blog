@@ -2,6 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Host: www.jaehoyi.kr
-
 Sitemap: https://www.jaehoyi.kr/sitemap.xml
