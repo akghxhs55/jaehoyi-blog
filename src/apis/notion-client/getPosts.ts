@@ -6,7 +6,12 @@ import getAllPageIds from "src/libs/utils/notion/getAllPageIds"
 import getPageProperties from "src/libs/utils/notion/getPageProperties"
 import { TPosts } from "src/types"
 import { kvDel, kvGet, kvSet } from "src/libs/cache/kv"
-import { clearNotionFileCache, withNotionFileCache, withNotionRetry } from "./notionCache"
+import {
+  clearNotionFileCache,
+  getNotionFetchOptions,
+  withNotionFileCache,
+  withNotionRetry,
+} from "./notionCache"
 
 /**
  * @param {{ includePages: boolean }} - false: posts only / true: include pages
@@ -56,7 +61,9 @@ async function getPostsFromNotion(ttlSec: number) {
   let id = CONFIG.notionConfig.pageId as string
   const api = new NotionAPI()
 
-  const response = await withNotionRetry(() => api.getPage(id))
+  const response = await withNotionRetry(() =>
+    api.getPage(id, { ofetchOptions: getNotionFetchOptions() })
+  )
   id = idToUuid(id)
   // Handle nested value structure in new Notion API
   const collectionEntry = Object.values(response.collection)[0]

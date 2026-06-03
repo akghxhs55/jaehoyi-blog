@@ -39,9 +39,6 @@ export default async function handler(
       }
 
       for (const row of visiblePosts) {
-        paths.add(`/${row.slug}`)
-        await clearRecordMapCache(row.id)
-
         for (const tag of row.tags || []) {
           paths.add(`/tag/${encodeURIComponent(tag)}`)
           tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
@@ -67,14 +64,12 @@ export default async function handler(
         }
       }
 
-      const revalidateRequests = Array.from(paths).map((targetPath) =>
-        res.revalidate(targetPath)
-      )
-      await Promise.all(revalidateRequests)
+      await Promise.all(Array.from(paths).map((targetPath) => res.revalidate(targetPath)))
     }
 
     res.json({ revalidated: true })
   } catch (err) {
+    console.error("Error revalidating", err)
     return res.status(500).send("Error revalidating")
   }
 }

@@ -4,6 +4,14 @@ import path from "node:path"
 const cacheDir = path.join(process.cwd(), ".next", "cache", "notion")
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const isVercelRuntime = Boolean(process.env.VERCEL)
+const isProductionBuild =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.npm_lifecycle_event === "build"
+const notionRequestTimeoutMs = Number(
+  process.env.NOTION_REQUEST_TIMEOUT_MS ||
+    (isVercelRuntime && !isProductionBuild ? 7000 : 30000)
+)
 
 async function readCacheFile<T>(filePath: string, ttlMs: number) {
   try {
@@ -33,8 +41,8 @@ async function acquireLock(
   lockPath: string,
   options: { timeoutMs?: number; staleMs?: number } = {}
 ) {
-  const timeoutMs = options.timeoutMs ?? 120_000
-  const staleMs = options.staleMs ?? 120_000
+  const timeoutMs = options.timeoutMs ?? 1500
+  const staleMs = options.staleMs ?? 30_000
   const startedAt = Date.now()
 
   while (Date.now() - startedAt < timeoutMs) {
@@ -61,7 +69,9 @@ async function acquireLock(
   return null
 }
 
-async function runWithNotionRequestLock<T>(operation: () => Promise<T>) {
+async function runWithBuildRequestLock<T>(operation: () => Promise<T>) {
+  if (!isProductionBuild) return operation()
+
   const release = await acquireLock(path.join(cacheDir, "request.lock"), {
     timeoutMs: 600_000,
     staleMs: 120_000,
@@ -72,7 +82,7 @@ async function runWithNotionRequestLock<T>(operation: () => Promise<T>) {
   try {
     return await operation()
   } finally {
-    await sleep(2000)
+    await sleep(1500)
     await release()
   }
 }
@@ -131,20 +141,26 @@ function isRetryableNotionError(error: unknown) {
 }
 
 export async function withNotionRetry<T>(operation: () => Promise<T>) {
-  const maxAttempts = 8
+  const maxAttempts = isProductionBuild ? 6 : isVercelRuntime ? 1 : 3
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      return await runWithNotionRequestLock(operation)
+      return await runWithBuildRequestLock(operation)
     } catch (error) {
       if (attempt === maxAttempts || !isRetryableNotionError(error)) {
         throw error
       }
 
-      const backoffMs = Math.min(60_000, 2000 * 2 ** (attempt - 1))
+      const backoffMs = isProductionBuild
+        ? Math.min(15000, 2000 * 2 ** (attempt - 1))
+        : Math.min(2000, 300 * 2 ** (attempt - 1))
       await sleep(backoffMs)
     }
   }
 
-  return runWithNotionRequestLock(operation)
+  return runWithBuildRequestLock(operation)
 }
+
+export const getNotionFetchOptions = () => ({
+  timeout: notionRequestTimeoutMs,
+})
