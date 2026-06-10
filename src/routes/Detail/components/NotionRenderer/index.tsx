@@ -333,8 +333,8 @@ const StyledWrapper = styled.div`
     position: absolute;
     top: 4px;
     right: 4px;
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     border-radius: 6px;
     display: inline-flex;
