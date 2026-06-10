@@ -18,6 +18,7 @@ import 'prismjs/components/prism-csharp.js'
 import 'prismjs/components/prism-js-templates.js'
 import 'prismjs/components/prism-kotlin.js'
 import 'prismjs/components/prism-markdown.js'
+import 'prismjs/components/prism-powershell.js'
 import 'prismjs/components/prism-python.js'
 import 'prismjs/components/prism-rust.js'
 
@@ -109,6 +110,15 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
     let debounceTimer: ReturnType<typeof setTimeout> | null = null
     const isHighlighting = { current: false }
 
+    const markScrollableCodeBlocks = () => {
+      root.querySelectorAll<HTMLElement>('pre.notion-code').forEach((pre) => {
+        const code = pre.querySelector<HTMLElement>(':scope > code')
+        const hasHorizontalScroll = code ? code.scrollWidth > code.clientWidth : false
+
+        pre.classList.toggle('has-horizontal-scroll', hasHorizontalScroll)
+      })
+    }
+
     const fixAndHighlight = () => {
       if (!root) return
       if (isHighlighting.current) return
@@ -144,6 +154,7 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
           'sh': 'bash',
           'zsh': 'bash',
           'console': 'bash',
+          'pwsh': 'powershell',
           // Others common
           'py': 'python',
           'rb': 'ruby',
@@ -210,6 +221,7 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
 
         // Run Prism highlighting under this container
         Prism.highlightAllUnder(root)
+        markScrollableCodeBlocks()
       } finally {
         isHighlighting.current = false
         // Reconnect the observer after DOM stabilization
@@ -221,6 +233,7 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
 
     // Initial run (after first render)
     fixAndHighlight()
+    window.addEventListener('resize', markScrollableCodeBlocks)
 
     // Observe for dynamic content updates from react-notion-x
     observer = new MutationObserver(() => {
@@ -234,6 +247,7 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer)
       if (observer) observer.disconnect()
+      window.removeEventListener('resize', markScrollableCodeBlocks)
     }
   }, [recordMap])
 
@@ -285,18 +299,42 @@ const StyledWrapper = styled.div`
   /* Code block copy button sizing and layout */
   .notion-code {
     position: relative;
+    overflow: visible;
   }
-  .notion-code pre {
-    padding-right: 2.25rem !important; /* reserve space for smaller copy button */
-    overflow-x: auto; /* only scroll when content actually overflows */
+  .notion-code.has-horizontal-scroll {
+    padding-bottom: 0.55em;
+  }
+  .notion-code.has-horizontal-scroll > code {
+    padding-bottom: 0.35em;
+  }
+  .notion-code > code {
+    display: block;
+    max-width: 100%;
+    padding-right: 1.75rem; /* reserve space under the floating copy button */
+    overflow-x: auto; /* keep horizontal scrolling separate from the floating button */
+    scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+    scrollbar-width: thin;
+  }
+  .notion-code > code::-webkit-scrollbar {
+    height: 6px;
+  }
+  .notion-code > code::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .notion-code > code::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.38);
+    border-radius: 999px;
+  }
+  .notion-code > code::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.62);
   }
   .notion-code .notion-code-copy,
   .notion-code .notion-code-copy-button {
     position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 28px;
-    height: 28px;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
     padding: 0;
     border-radius: 6px;
     display: inline-flex;
@@ -307,7 +345,7 @@ const StyledWrapper = styled.div`
   /* Icon size inside the button */
   .notion-code .notion-code-copy svg,
   .notion-code .notion-code-copy-button svg {
-    width: 16px;
-    height: 16px;
+    width: 13px;
+    height: 13px;
   }
 `
