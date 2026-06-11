@@ -74,9 +74,6 @@ const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
               </div>
             )}
           </div>
-          <div className="summary">
-            <p>{data.summary}</p>
-          </div>
           <div className="tags">
             {data.tags &&
               data.tags.map((tag: string, idx: number) => (
@@ -183,18 +180,6 @@ const StyledWrapper = styled(Link)`
           svg {
             vertical-align: middle;
             transform: translateY(-1px);
-          }
-        }
-      }
-      > .summary {
-        margin-bottom: 1rem;
-        p {
-          display: none;
-          line-height: 2rem;
-          color: ${({ theme }) => theme.colors.gray11};
-
-          @media (min-width: 768px) {
-            display: block;
           }
         }
       }
