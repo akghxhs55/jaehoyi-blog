@@ -59,7 +59,7 @@ const StyledWrapper = styled.div`
   
   .container {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     column-gap: 0.75rem;
     padding-left: 1rem;
     padding-right: 1rem;
@@ -73,7 +73,7 @@ const StyledWrapper = styled.div`
         padding-right: 6rem;
       }
     }
-    .title {
+    > .title {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -82,7 +82,8 @@ const StyledWrapper = styled.div`
       font-size: 0.95rem;
       text-align: center;
     }
-    .nav {
+    > .nav {
+      grid-column: 3;
       display: flex;
       gap: 0.5rem;
       align-items: center;
@@ -91,7 +92,7 @@ const StyledWrapper = styled.div`
     .search {
       display: none;
     }
-    @media (min-width: 640px) {
+    @media (min-width: 1024px) {
       .search {
         display: block;
       }

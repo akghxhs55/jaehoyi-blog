@@ -18,6 +18,7 @@ export default Logo
 
 const StyledWrapper = styled(Link)`
   display: inline-flex;
+  min-width: 0;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
@@ -31,6 +32,10 @@ const StyledWrapper = styled(Link)`
     overflow: hidden;
   }
   .title {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
+    color: ${({ theme }) => theme.colors.gray11};
+    font-size: 0.95rem;
   }
 `
