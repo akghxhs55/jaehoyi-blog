@@ -296,6 +296,19 @@ const StyledWrapper = styled.div`
     padding-bottom: 1px;
   }
 
+  /*
+   * Notion can leave block_page_width enabled on images moved into columns.
+   * react-notion-x then combines the narrow column width with the image's
+   * original fixed height and object-fit: cover, which crops the image.
+   */
+  .notion-column .notion-asset-wrapper-image > div {
+    height: auto !important;
+  }
+  .notion-column .notion-asset-wrapper-image img {
+    height: auto;
+    object-fit: contain !important;
+  }
+
   /* Code block copy button sizing and layout */
   .notion-code {
     position: relative;
