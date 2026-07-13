@@ -119,6 +119,38 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
       })
     }
 
+    const initializeSpoilers = () => {
+      root
+        .querySelectorAll<HTMLSpanElement>('span.notion-purple_background')
+        .forEach((spoiler) => {
+          if (spoiler.dataset.spoilerInitialized) return
+
+          spoiler.dataset.spoilerInitialized = 'true'
+          spoiler.classList.add('notion-spoiler')
+          spoiler.tabIndex = 0
+          spoiler.setAttribute('role', 'button')
+          spoiler.setAttribute('aria-expanded', 'false')
+          spoiler.setAttribute('aria-label', '스포일러 보기')
+
+          const toggle = () => {
+            const isRevealed = spoiler.classList.toggle('is-revealed')
+            spoiler.setAttribute('aria-expanded', String(isRevealed))
+            spoiler.setAttribute(
+              'aria-label',
+              isRevealed ? '스포일러 숨기기' : '스포일러 보기'
+            )
+          }
+
+          spoiler.addEventListener('click', toggle)
+          spoiler.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return
+
+            event.preventDefault()
+            toggle()
+          })
+        })
+    }
+
     const fixAndHighlight = () => {
       if (!root) return
       if (isHighlighting.current) return
@@ -222,6 +254,7 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
         // Run Prism highlighting under this container
         Prism.highlightAllUnder(root)
         markScrollableCodeBlocks()
+        initializeSpoilers()
       } finally {
         isHighlighting.current = false
         // Reconnect the observer after DOM stabilization
@@ -294,6 +327,42 @@ const StyledWrapper = styled.div`
   .notion-list-disc li {
     padding-top: 1px;
     padding-bottom: 1px;
+  }
+
+  /*
+   * Notion convention: purple text background means spoiler.
+   * Hover reveals it temporarily; click, Enter, or Space keeps it revealed.
+   */
+  span.notion-purple_background.notion-spoiler {
+    cursor: pointer;
+    background-color: rgba(148, 163, 184, 0.26) !important;
+    border-radius: 0.2em;
+    color: rgba(100, 116, 139, 0.72) !important;
+    filter: blur(0.22em);
+    user-select: none;
+    transition: background-color 160ms ease, color 160ms ease, filter 160ms ease;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  span.notion-purple_background.notion-spoiler * {
+    color: inherit !important;
+  }
+  span.notion-purple_background.notion-spoiler:hover,
+  span.notion-purple_background.notion-spoiler:focus-visible,
+  span.notion-purple_background.notion-spoiler.is-revealed {
+    background-color: transparent !important;
+    color: inherit !important;
+    filter: none;
+    user-select: text;
+  }
+  span.notion-purple_background.notion-spoiler:hover *,
+  span.notion-purple_background.notion-spoiler:focus-visible *,
+  span.notion-purple_background.notion-spoiler.is-revealed * {
+    color: inherit !important;
+  }
+  span.notion-purple_background.notion-spoiler:focus-visible {
+    outline: 2px solid rgba(100, 116, 139, 0.8);
+    outline-offset: 2px;
   }
 
   /*

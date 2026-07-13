@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "yarn generate:feeds && next build",
     "start": "next start",
-    "generate:feeds": "tsx -r dotenv/config ./scripts/generate-rss.ts",
+    "generate:feeds": "DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config ./scripts/generate-rss.ts",
     "lint": "eslint ."
   },
   "dependencies": {
