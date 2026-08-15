@@ -16,6 +16,9 @@ type Props = {
   likeCount?: number
 }
 
+const isNotionAttachmentImage = (url: string) =>
+  /^https:\/\/(?:www\.)?notion\.so\/image\/attachment%3a/i.test(url)
+
 const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
   const category = (data.category && data.category?.[0]) || undefined
 
@@ -53,6 +56,7 @@ const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               css={{ objectFit: "cover" }}
               priority={!!priority}
+              unoptimized={isNotionAttachmentImage(data.thumbnail)}
             />
           </div>
         )}
