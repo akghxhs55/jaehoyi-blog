@@ -30,7 +30,7 @@ const PostDetail: React.FC<Props> = () => {
         )}
         {data.type[0] === "Post" && <PostHeader data={data} />}
         <div>
-          <NotionRenderer recordMap={data.recordMap} />
+          <NotionRenderer pageId={data.id} recordMap={data.recordMap} />
         </div>
         {data.type[0] === "Post" && (
           <>

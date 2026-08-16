@@ -2,11 +2,12 @@ import dynamic from "next/dynamic"
 import Image from "next/image"
 import type { ImageProps } from "next/image"
 import Link from "next/link"
-import { ExtendedRecordMap } from "notion-types"
+import { Block, ExtendedRecordMap } from "notion-types"
+import { defaultMapImageUrl } from "notion-utils"
 import useScheme from "src/hooks/useScheme"
 
 // used for rendering equations (optional)
-import { FC, useEffect, useRef } from "react"
+import { FC, useCallback, useEffect, useRef } from "react"
 import styled from "@emotion/styled"
 import Prism from "prismjs/prism"
 import 'prismjs/components/prism-markup-templating.js'
@@ -64,6 +65,7 @@ const mapPageUrl = (id: string) => {
 const NotionImage = ({ width, height, fill, ...props }: ImageProps) => {
   const src = typeof props.src === "string" ? props.src : ""
   const isAnimatedGif = src.toLowerCase().includes(".gif")
+  const isNotionImageProxy = src.startsWith("/api/notion-image?")
   const alt = props.alt || ""
 
   if (!width || !height) {
@@ -89,18 +91,30 @@ const NotionImage = ({ width, height, fill, ...props }: ImageProps) => {
       height={height}
       sizes={props.sizes || "(max-width: 768px) calc(100vw - 2rem), 800px"}
       quality={props.quality || 75}
-      unoptimized={props.unoptimized || isAnimatedGif}
+      unoptimized={props.unoptimized || isAnimatedGif || isNotionImageProxy}
     />
   )
 }
 
 type Props = {
+  pageId: string
   recordMap: ExtendedRecordMap
 }
 
-const NotionRenderer: FC<Props> = ({ recordMap }) => {
+const NotionRenderer: FC<Props> = ({ pageId, recordMap }) => {
   const [scheme] = useScheme()
   const containerRef = useRef<HTMLDivElement>(null)
+  const mapImageUrl = useCallback(
+    (url: string | undefined, block: Block) => {
+      if (recordMap.signed_urls?.[block.id]) {
+        const params = new URLSearchParams({ pageId, blockId: block.id })
+        return `/api/notion-image?${params.toString()}`
+      }
+
+      return defaultMapImageUrl(url, block)
+    },
+    [pageId, recordMap]
+  )
 
   useEffect(() => {
     const root = containerRef.current
@@ -298,6 +312,7 @@ const NotionRenderer: FC<Props> = ({ recordMap }) => {
           nextImage: NotionImage,
           nextLink: Link,
         }}
+        mapImageUrl={mapImageUrl}
         mapPageUrl={mapPageUrl}
         forceCustomImages
       />
