@@ -45,6 +45,7 @@ export const isAllowedNotionImageUrl = (url: string) => {
     return (
       protocol === "https:" &&
       (hostname === "file.notion.so" ||
+        hostname === "file.notion.com" ||
         hostname === "img.notionusercontent.com" ||
         hostname.endsWith(".amazonaws.com"))
     )

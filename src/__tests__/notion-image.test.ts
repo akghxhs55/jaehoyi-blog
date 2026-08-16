@@ -15,8 +15,16 @@ test("accepts only known Notion image hosts", () => {
     true
   )
   assert.equal(
+    isAllowedNotionImageUrl("https://file.notion.com/f/image.png"),
+    true
+  )
+  assert.equal(
     isAllowedNotionImageUrl("https://img.notionusercontent.com/image.png"),
     true
+  )
+  assert.equal(
+    isAllowedNotionImageUrl("https://file.notion.com.example.com/image.png"),
+    false
   )
   assert.equal(isAllowedNotionImageUrl("https://example.com/image.png"), false)
 })
