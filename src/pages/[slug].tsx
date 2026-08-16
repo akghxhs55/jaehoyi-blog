@@ -18,6 +18,25 @@ const filter: FilterPostsOptions = {
   acceptType: ["Paper", "Post", "Page"],
 }
 
+const getNotionThumbnailMetaUrl = (url: string, blockId: string) => {
+  if (!/^https:\/\/(?:www\.)?notion\.so\/image\/attachment%3a/i.test(url)) {
+    return url
+  }
+
+  try {
+    const parsed = new URL(url)
+    const source = decodeURIComponent(parsed.pathname.slice("/image/".length))
+    const params = new URLSearchParams({
+      pageId: blockId,
+      blockId,
+      source,
+    })
+    return `${CONFIG.link}/api/notion-image?${params.toString()}`
+  } catch {
+    return url
+  }
+}
+
 export const getStaticPaths = async () => {
   const posts = await getPosts()
   const filteredPost = filterPosts(posts, filter)
@@ -78,7 +97,7 @@ const DetailPage: NextPageWithLayout = () => {
   if (!post) return <CustomError />
 
   const image =
-    post.thumbnail ||
+    (post.thumbnail && getNotionThumbnailMetaUrl(post.thumbnail, post.id)) ||
     (CONFIG.ogImageGenerateURL
       ? `${CONFIG.ogImageGenerateURL}/${encodeURIComponent(post.title)}.png`
       : CONFIG.profile.image)

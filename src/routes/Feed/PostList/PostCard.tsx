@@ -19,8 +19,28 @@ type Props = {
 const isNotionAttachmentImage = (url: string) =>
   /^https:\/\/(?:www\.)?notion\.so\/image\/attachment%3a/i.test(url)
 
+const getNotionThumbnailUrl = (url: string, blockId: string) => {
+  if (!isNotionAttachmentImage(url)) return url
+
+  try {
+    const parsed = new URL(url)
+    const source = decodeURIComponent(parsed.pathname.slice("/image/".length))
+    const params = new URLSearchParams({
+      pageId: blockId,
+      blockId,
+      source,
+    })
+    return `/api/notion-image?${params.toString()}`
+  } catch {
+    return url
+  }
+}
+
 const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
   const category = (data.category && data.category?.[0]) || undefined
+  const thumbnailUrl = data.thumbnail
+    ? getNotionThumbnailUrl(data.thumbnail, data.id)
+    : undefined
 
   // Fallback: if likeCount not provided, fetch per-card
   const { data: likeData } = useQuery<{ likes: number; liked: boolean }>({
@@ -47,16 +67,16 @@ const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
             <Category>{category}</Category>
           </div>
         )}
-        {data.thumbnail && (
+        {thumbnailUrl && (
           <div className="thumbnail">
             <Image
-              src={data.thumbnail}
+              src={thumbnailUrl}
               fill
               alt={data.title}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               css={{ objectFit: "cover" }}
               priority={!!priority}
-              unoptimized={isNotionAttachmentImage(data.thumbnail)}
+              unoptimized={thumbnailUrl.startsWith("/api/notion-image?")}
             />
           </div>
         )}

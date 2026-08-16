@@ -106,8 +106,16 @@ const NotionRenderer: FC<Props> = ({ pageId, recordMap }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapImageUrl = useCallback(
     (url: string | undefined, block: Block) => {
-      if (recordMap.signed_urls?.[block.id]) {
-        const params = new URLSearchParams({ pageId, blockId: block.id })
+      const signedUrl = recordMap.signed_urls?.[block.id]
+      const source = url?.startsWith("attachment:") ? url : undefined
+
+      if (signedUrl || source) {
+        const params = new URLSearchParams({
+          pageId,
+          blockId: block.id,
+          ...(signedUrl && { signedUrl }),
+          ...(source && { source }),
+        })
         return `/api/notion-image?${params.toString()}`
       }
 

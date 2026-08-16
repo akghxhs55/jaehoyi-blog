@@ -5,6 +5,7 @@ import {
   createNotionImageResolver,
   getNotionImageCacheControl,
   isAllowedNotionImageUrl,
+  isValidNotionAttachmentSource,
   notionImageUrlExpiresSoon,
 } from "../pages/api/notion-image"
 
@@ -18,6 +19,19 @@ test("accepts only known Notion image hosts", () => {
     true
   )
   assert.equal(isAllowedNotionImageUrl("https://example.com/image.png"), false)
+})
+
+test("accepts only Notion attachment sources", () => {
+  assert.equal(
+    isValidNotionAttachmentSource(
+      "attachment:87a5843b-d464-44ab-aa1f-0d8e2453338e:image.png"
+    ),
+    true
+  )
+  assert.equal(
+    isValidNotionAttachmentSource("https://example.com/a.png"),
+    false
+  )
 })
 
 test("refreshes signed URLs shortly before they expire", () => {
@@ -130,4 +144,71 @@ test("coalesces a concurrent refresh for expiring URLs", async () => {
   assert.deepEqual(results, [freshUrl, freshUrl, freshUrl])
   assert.equal(loadCount, 2)
   assert.equal(clearCount, 1)
+})
+
+test("uses a provided signed URL without loading the record map", async () => {
+  const pageId = "3bd9567b-c6b8-808f-875e-e9d25d44b4b6"
+  const now = Date.UTC(2026, 7, 16, 12)
+  const signedUrl = `https://file.notion.so/image.png?expirationTimestamp=${now + 60 * 60 * 1000}`
+  let loadCount = 0
+  const resolveImage = createNotionImageResolver({
+    clearRecordMap: async () => undefined,
+    loadRecordMap: async () => {
+      loadCount += 1
+      return { signed_urls: {} }
+    },
+    now: () => now,
+  })
+
+  assert.equal(await resolveImage(pageId, pageId, { signedUrl }), signedUrl)
+  assert.equal(loadCount, 0)
+})
+
+test("signs an attachment source without loading the record map", async () => {
+  const pageId = "3bd9567b-c6b8-808f-875e-e9d25d44b4b6"
+  const now = Date.UTC(2026, 7, 16, 12)
+  const source = "attachment:87a5843b-d464-44ab-aa1f-0d8e2453338e:image.png"
+  const signedUrl = `https://img.notionusercontent.com/image.png?exp=${Math.floor(now / 1000) + 3600}`
+  let loadCount = 0
+  let signCount = 0
+  const resolveImage = createNotionImageResolver({
+    clearRecordMap: async () => undefined,
+    loadRecordMap: async () => {
+      loadCount += 1
+      return { signed_urls: {} }
+    },
+    signFileUrl: async (blockId, receivedSource) => {
+      signCount += 1
+      assert.equal(blockId, pageId)
+      assert.equal(receivedSource, source)
+      return signedUrl
+    },
+    now: () => now,
+  })
+
+  assert.equal(await resolveImage(pageId, pageId, { source }), signedUrl)
+  assert.equal(signCount, 1)
+  assert.equal(loadCount, 0)
+})
+
+test("falls back to the Notion image redirect when signing fails", async () => {
+  const pageId = "3bd9567b-c6b8-808f-875e-e9d25d44b4b6"
+  const source = "attachment:87a5843b-d464-44ab-aa1f-0d8e2453338e:image.png"
+  const redirectedUrl =
+    "https://img.notionusercontent.com/image.png?exp=9999999999"
+  let loadCount = 0
+  const resolveImage = createNotionImageResolver({
+    clearRecordMap: async () => undefined,
+    loadRecordMap: async () => {
+      loadCount += 1
+      return { signed_urls: {} }
+    },
+    resolveAttachment: async () => redirectedUrl,
+    signFileUrl: async () => {
+      throw new Error("signing unavailable")
+    },
+  })
+
+  assert.equal(await resolveImage(pageId, pageId, { source }), redirectedUrl)
+  assert.equal(loadCount, 0)
 })

@@ -1,9 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next"
+import { NotionAPI } from "notion-client"
 
 import {
   clearRecordMapCache,
   getRecordMap,
 } from "src/apis/notion-client/getRecordMap"
+import {
+  getNotionFetchOptions,
+  withNotionRetry,
+} from "src/apis/notion-client/notionCache"
 
 const notionIdPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i
 const refreshBufferMs = 5 * 60 * 1000
@@ -14,6 +19,25 @@ const maxMemoryCacheEntries = 50
 
 type SignedUrls = Record<string, string>
 type RecordMapWithSignedUrls = { signed_urls?: SignedUrls }
+type ResolveImageOptions = {
+  signedUrl?: string
+  source?: string
+}
+
+export const isValidNotionAttachmentSource = (source: string) =>
+  source.length <= 2048 &&
+  /^attachment:[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}:.+$/i.test(source)
+
+const getNotionAttachmentProxyUrl = (source: string, blockId: string) => {
+  const url = new URL(
+    `/image/${encodeURIComponent(source)}`,
+    "https://www.notion.so"
+  )
+  url.searchParams.set("table", "block")
+  url.searchParams.set("id", blockId)
+  url.searchParams.set("cache", "v2")
+  return url.toString()
+}
 
 export const isAllowedNotionImageUrl = (url: string) => {
   try {
@@ -66,12 +90,19 @@ type NotionImageResolverOptions = {
   clearRecordMap: (pageId: string) => Promise<unknown>
   loadRecordMap: (pageId: string) => Promise<RecordMapWithSignedUrls>
   now?: () => number
+  resolveAttachment?: (
+    blockId: string,
+    source: string
+  ) => Promise<string | undefined>
+  signFileUrl?: (blockId: string, source: string) => Promise<string | undefined>
 }
 
 export const createNotionImageResolver = ({
   clearRecordMap,
   loadRecordMap,
   now = Date.now,
+  resolveAttachment,
+  signFileUrl,
 }: NotionImageResolverOptions) => {
   const pageCache = new Map<
     string,
@@ -127,7 +158,37 @@ export const createNotionImageResolver = ({
     }
   }
 
-  return async (pageId: string, blockId: string) => {
+  return async (
+    pageId: string,
+    blockId: string,
+    { signedUrl: providedSignedUrl, source }: ResolveImageOptions = {}
+  ) => {
+    if (
+      providedSignedUrl &&
+      isAllowedNotionImageUrl(providedSignedUrl) &&
+      !notionImageUrlExpiresSoon(providedSignedUrl, now())
+    ) {
+      return providedSignedUrl
+    }
+
+    if (source && isValidNotionAttachmentSource(source)) {
+      try {
+        const signedUrl = await signFileUrl?.(blockId, source)
+        if (signedUrl && isAllowedNotionImageUrl(signedUrl)) return signedUrl
+      } catch {
+        // The unofficial signing endpoint can be blocked in serverless regions.
+      }
+
+      try {
+        const resolvedUrl = await resolveAttachment?.(blockId, source)
+        if (resolvedUrl && isAllowedNotionImageUrl(resolvedUrl)) {
+          return resolvedUrl
+        }
+      } catch {
+        // Fall through to the record-map refresh path.
+      }
+    }
+
     let signedUrls = await loadSignedUrls(pageId)
     let signedUrl = signedUrls[blockId]
 
@@ -140,9 +201,43 @@ export const createNotionImageResolver = ({
   }
 }
 
+const signNotionFileUrl = async (blockId: string, source: string) => {
+  const api = new NotionAPI()
+  const response = await withNotionRetry(() =>
+    api.getSignedFileUrls(
+      [{ permissionRecord: { table: "block", id: blockId }, url: source }],
+      getNotionFetchOptions()
+    )
+  )
+  return response.signedUrls?.[0]
+}
+
+const resolveNotionAttachment = async (blockId: string, source: string) => {
+  const { headers, timeout } = getNotionFetchOptions()
+  const response = await fetch(getNotionAttachmentProxyUrl(source, blockId), {
+    headers,
+    redirect: "manual",
+    signal: AbortSignal.timeout(timeout),
+  })
+  const location = response.headers.get("location")
+
+  if (
+    response.status >= 300 &&
+    response.status < 400 &&
+    location &&
+    isAllowedNotionImageUrl(location)
+  ) {
+    return location
+  }
+
+  return undefined
+}
+
 const getSignedImageUrl = createNotionImageResolver({
   clearRecordMap: clearRecordMapCache,
   loadRecordMap: getRecordMap,
+  resolveAttachment: resolveNotionAttachment,
+  signFileUrl: signNotionFileUrl,
 })
 
 export default async function handler(
@@ -160,6 +255,12 @@ export default async function handler(
   const blockId = Array.isArray(req.query.blockId)
     ? req.query.blockId[0]
     : req.query.blockId
+  const signedUrl = Array.isArray(req.query.signedUrl)
+    ? req.query.signedUrl[0]
+    : req.query.signedUrl
+  const source = Array.isArray(req.query.source)
+    ? req.query.source[0]
+    : req.query.source
 
   if (
     !pageId ||
@@ -170,15 +271,25 @@ export default async function handler(
     return res.status(400).json({ error: "Invalid Notion image identifiers" })
   }
 
-  try {
-    const signedUrl = await getSignedImageUrl(pageId, blockId)
+  if (
+    (signedUrl && !isAllowedNotionImageUrl(signedUrl)) ||
+    (source && !isValidNotionAttachmentSource(source))
+  ) {
+    return res.status(400).json({ error: "Invalid Notion image source" })
+  }
 
-    if (!signedUrl || !isAllowedNotionImageUrl(signedUrl)) {
+  try {
+    const resolvedUrl = await getSignedImageUrl(pageId, blockId, {
+      signedUrl,
+      source,
+    })
+
+    if (!resolvedUrl || !isAllowedNotionImageUrl(resolvedUrl)) {
       return res.status(404).json({ error: "Notion image not found" })
     }
 
-    res.setHeader("Cache-Control", getNotionImageCacheControl(signedUrl))
-    return res.redirect(307, signedUrl)
+    res.setHeader("Cache-Control", getNotionImageCacheControl(resolvedUrl))
+    return res.redirect(307, resolvedUrl)
   } catch {
     return res.status(502).json({ error: "Unable to load Notion image" })
   }
