@@ -3,6 +3,7 @@ import test from "node:test"
 
 import {
   createNotionImageResolver,
+  fetchNotionImageBody,
   getNotionImageCacheControl,
   isAllowedNotionImageUrl,
   isValidNotionAttachmentSource,
@@ -40,6 +41,32 @@ test("accepts only Notion attachment sources", () => {
     isValidNotionAttachmentSource("https://example.com/a.png"),
     false
   )
+})
+
+test("loads an image body for the Next.js image optimizer", async () => {
+  const body = new Uint8Array([137, 80, 78, 71])
+  const image = await fetchNotionImageBody(
+    "https://file.notion.com/f/image.png",
+    async () =>
+      new Response(body, {
+        headers: { "Content-Type": "image/png; charset=binary" },
+      })
+  )
+
+  assert.equal(image?.contentType, "image/png")
+  assert.deepEqual(new Uint8Array(image?.body || []), body)
+})
+
+test("rejects a non-image response for the image optimizer", async () => {
+  const image = await fetchNotionImageBody(
+    "https://file.notion.com/f/image.png",
+    async () =>
+      new Response("not an image", {
+        headers: { "Content-Type": "text/html" },
+      })
+  )
+
+  assert.equal(image, undefined)
 })
 
 test("refreshes signed URLs shortly before they expire", () => {

@@ -16,6 +16,7 @@ const fallbackCacheTtlMs = 5 * 60 * 1000
 const memoryCacheTtlMs = 30 * 60 * 1000
 const maxCdnCacheTtlSec = 6 * 60 * 60
 const maxMemoryCacheEntries = 50
+const maxOptimizedSourceBytes = 15 * 1024 * 1024
 
 type SignedUrls = Record<string, string>
 type RecordMapWithSignedUrls = { signed_urls?: SignedUrls }
@@ -234,6 +235,34 @@ const resolveNotionAttachment = async (blockId: string, source: string) => {
   return undefined
 }
 
+export const fetchNotionImageBody = async (
+  url: string,
+  fetchImage: typeof fetch = fetch
+) => {
+  const { headers, timeout } = getNotionFetchOptions()
+  const response = await fetchImage(url, {
+    headers,
+    redirect: "follow",
+    signal: AbortSignal.timeout(timeout),
+  })
+  const contentType = response.headers.get("content-type")?.split(";", 1)[0]
+  const declaredLength = Number(response.headers.get("content-length"))
+
+  if (
+    !response.ok ||
+    !contentType?.startsWith("image/") ||
+    (Number.isFinite(declaredLength) &&
+      declaredLength > maxOptimizedSourceBytes)
+  ) {
+    return undefined
+  }
+
+  const body = await response.arrayBuffer()
+  if (body.byteLength > maxOptimizedSourceBytes) return undefined
+
+  return { body, contentType }
+}
+
 const getSignedImageUrl = createNotionImageResolver({
   clearRecordMap: clearRecordMapCache,
   loadRecordMap: getRecordMap,
@@ -262,6 +291,9 @@ export default async function handler(
   const source = Array.isArray(req.query.source)
     ? req.query.source[0]
     : req.query.source
+  const optimize = Array.isArray(req.query.optimize)
+    ? req.query.optimize[0]
+    : req.query.optimize
 
   if (
     !pageId ||
@@ -274,7 +306,8 @@ export default async function handler(
 
   if (
     (signedUrl && !isAllowedNotionImageUrl(signedUrl)) ||
-    (source && !isValidNotionAttachmentSource(source))
+    (source && !isValidNotionAttachmentSource(source)) ||
+    (optimize && optimize !== "1")
   ) {
     return res.status(400).json({ error: "Invalid Notion image source" })
   }
@@ -290,6 +323,18 @@ export default async function handler(
     }
 
     res.setHeader("Cache-Control", getNotionImageCacheControl(resolvedUrl))
+
+    if (optimize === "1") {
+      const image = await fetchNotionImageBody(resolvedUrl)
+      if (!image) {
+        return res.status(502).json({ error: "Unable to load Notion image" })
+      }
+
+      res.setHeader("Content-Type", image.contentType)
+      res.setHeader("Content-Length", image.body.byteLength)
+      return res.status(200).send(Buffer.from(image.body))
+    }
+
     return res.redirect(307, resolvedUrl)
   } catch {
     return res.status(502).json({ error: "Unable to load Notion image" })

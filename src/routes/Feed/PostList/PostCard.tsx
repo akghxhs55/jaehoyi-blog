@@ -29,6 +29,7 @@ const getNotionThumbnailUrl = (url: string, blockId: string) => {
       pageId: blockId,
       blockId,
       source,
+      optimize: "1",
     })
     return `/api/notion-image?${params.toString()}`
   } catch {
@@ -74,9 +75,9 @@ const PostCard: React.FC<Props> = ({ data, priority, likeCount }) => {
               fill
               alt={data.title}
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              quality={70}
               css={{ objectFit: "cover" }}
               priority={!!priority}
-              unoptimized={thumbnailUrl.startsWith("/api/notion-image?")}
             />
           </div>
         )}
