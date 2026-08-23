@@ -352,6 +352,24 @@ const StyledWrapper = styled.div`
     padding-bottom: 1px;
   }
 
+  /* Keep inline formatting authored in Notion visually distinct from body text. */
+  .notion b,
+  .notion strong {
+    font-weight: 700;
+  }
+  .notion em,
+  .notion i {
+    font-style: italic;
+  }
+  .notion s,
+  .notion del {
+    text-decoration: line-through;
+  }
+  .notion .notion-inline-underscore,
+  .notion u {
+    text-decoration: underline;
+  }
+
   /*
    * Notion convention: purple text background means spoiler.
    * Hover reveals it temporarily; click, Enter, or Space keeps it revealed.
