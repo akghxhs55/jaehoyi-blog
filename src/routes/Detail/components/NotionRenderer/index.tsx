@@ -307,7 +307,25 @@ const NotionRenderer: FC<Props> = ({ pageId, recordMap }) => {
   }, [recordMap])
 
   return (
-    <StyledWrapper ref={containerRef}>
+    <StyledWrapper
+      ref={containerRef}
+      onClickCapture={(event) => {
+        if (!(event.target instanceof Element)) return
+
+        const button = event.target.closest<HTMLElement>('.notion-code-copy-button')
+        if (button) button.dataset.copied = 'true'
+      }}
+      onTransitionEndCapture={(event) => {
+        if (!(event.target instanceof HTMLElement)) return
+        if (event.propertyName !== 'opacity') return
+        if (!event.target.matches('.notion-code-copy')) return
+        if (event.target.closest('.notion-code')?.matches(':hover')) return
+        if (window.getComputedStyle(event.target).opacity !== '0') return
+
+        const button = event.target.querySelector<HTMLElement>('.notion-code-copy-button')
+        if (button) delete button.dataset.copied
+      }}
+    >
       <_NotionRenderer
         darkMode={scheme === "dark"}
         recordMap={recordMap}
@@ -470,5 +488,19 @@ const StyledWrapper = styled.div`
   .notion-code .notion-code-copy-button svg {
     width: 13px;
     height: 13px;
+  }
+  .notion-code .notion-code-copy-button[data-copied="true"] svg {
+    display: none;
+  }
+  .notion-code .notion-code-copy-button[data-copied="true"]::after {
+    content: "";
+    width: 5px;
+    height: 9px;
+    border: solid currentColor;
+    border-width: 0 2px 2px 0;
+    transform: translateY(-2px) rotate(45deg);
+  }
+  .notion-code .notion-code-copy-tooltip {
+    display: none;
   }
 `
